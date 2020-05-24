@@ -15,10 +15,10 @@ This bot was made specifically for personels required to submit twice daily temp
 Search me up on telegram @ TempAdoBot or simply click http://t.me/TempAdoBot
 
 1. Sending of temperature (**__/sendtemp__**)
-   - **__/setsendurl__** <URL>
-     - Set up your URL to that you use to send your temperatures (Eg. https://temptaking.ado.sg/group/<unique-code>)
-     - This is **required** before you can execute /setsender!
-   - **__/setsendpin__** <4-digit PIN>
+   - **__/setsendurl__** {URL}
+     - Set up your URL to that you use to send your temperatures (Eg. https://temptaking.ado.sg/group/a-unique-code)
+     - This is **required** before you can execute **__/setsender__**
+   - **__/setsendpin__** {4-digit PIN}
      - Set up your 4-digit PIN you use to send your temperatures (Eg. 0000)
    - **__/setsender__**
      - Set who you are whenever you send a temperature through the bot
@@ -34,9 +34,9 @@ Search me up on telegram @ TempAdoBot or simply click http://t.me/TempAdoBot
      - Unsubscribes to daily reminders for both AM and PM temperatures
      - You will not receive any reminders from the bot anymore!
 3. Checking of members who have not sent their temperatures for the day (**__/forcecheck__**)
-   - **__/setcheckurl__** <URL>
-     - Set up your URL to that you use to send your temperatures (Eg. https://temptaking.ado.sg/overview/<unique-code>)
-     - This must be done before using /forcecheck
+   - **__/setcheckurl__** {URL}
+     - Set up your URL to that you use to send your temperatures (Eg. https://temptaking.ado.sg/overview/another-unique-code)
+     - This must be done before using **__/forcecheck__**
 
 For more info, seek help from the bot by using **__/help__** :) 
 
