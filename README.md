@@ -28,7 +28,7 @@ Search me up on telegram @ TempAdoBot or simply click http://t.me/TempAdoBot
 2. Setting up of daily temperature reminders
    - **__/subscribe__**
      - Subscribes to daily reminders for both AM and PM temperatures
-     - AM reminders sent at 1100
+     - AM reminders sent at **__1100__**
      - PM reminders sent at **__1530__**
    - **__/unsubscribe__**
      - Unsubscribes to daily reminders for both AM and PM temperatures
