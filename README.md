@@ -41,4 +41,4 @@ Search me up on telegram @ TempAdoBot or simply click http://t.me/TempAdoBot
 For more info, seek help from the bot by using **__/help__** :) 
 
 ## Future plans:
-- [] Stop this bot (for there is no reason for this after this COVID period)
+- [ ] Stop this bot (for there is no reason for this after this COVID period)
