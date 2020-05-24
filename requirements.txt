@@ -1,0 +1,6 @@
+# Function dependencies, for example:
+# package>=version
+python-telegram-bot==12.7
+requests==2.23.0
+pytz==2020.1
+firebase-admin==4.2.0
