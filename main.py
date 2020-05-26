@@ -4,16 +4,13 @@ import requests
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-from pytz import timezone
-from datetime import datetime
 from supportpackage import track
+from supportpackage.url_validator import *
+from supportpackage.time_helper import Time
 
 FIREBASE_PROJECT_ID = os.environ["FIREBASE_PROJECT_ID"]
 BOT_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SEND_URL = os.environ["SEND_URL"]
-TIME_ZONE = os.environ["TIME_ZONE"]
-MERIDIES_AM = "AM"
-MERIDIES_PM = "PM"
 
 #firebase init
 cred = credentials.ApplicationDefault()
@@ -73,17 +70,24 @@ def webhook(request):
                                     disable_notification=True)
                 else:
                     url = messageSplit[1]
-                    if isCheckURLValid(url):
-                        cr_ref.set({
-                            "checkurl": url
-                        }, merge=True)
-                        bot.sendMessage(chat_id=chatID, 
-                                        text="✅ URL set as:\n\n" + url + "\n\n/getcheckurl to retrieve url",
-                                        disable_notification=True)
-                    else:
-                        bot.sendMessage(chat_id=chatID, 
-                                        text="⚠ Invalid URL!\n\nURL Example: temptaking.ado.sg/overview/<uniqueCode>",
-                                        disable_notification=True)
+                    try:
+                        if isCheckURLValid(url):
+                            cr_ref.set({
+                                "checkurl": url
+                            }, merge=True)
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="✅ URL set as:\n\n" + url + "\n\n/getcheckurl to retrieve url",
+                                            disable_notification=True)
+                        else:
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="⚠ Invalid URL!\n\nURL Example: temptaking.ado.sg/overview/<uniqueCode>",
+                                            disable_notification=True)
+                    except (MissingPrefixError, InvalidURLError) as e:
+                        print("[main.py] webhook: /setcheckurl -- " + str(e))
+                        #TODO add bot msg
+                    except:
+                        print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
+                        #TODO add bot msg
             elif message.startswith("/getcheckurl"):
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "checkurl" in cr_details_dict
@@ -119,17 +123,24 @@ def webhook(request):
                                     disable_notification=True)
                 else:
                     url = messageSplit[1]
-                    if isSendURLValid(url):
-                        cr_ref.set({
-                            "sendurl": url
-                        }, merge=True)
-                        bot.sendMessage(chat_id=chatID, 
-                                        text="✅ URL set as:\n\n" + url + "\n\n/getsendurl to retrieve url",
-                                        disable_notification=True)
-                    else:
-                        bot.sendMessage(chat_id=chatID, 
-                                        text="⚠ Invalid URL!\n\nURL Example: temptaking.ado.sg/group/<uniqueCode>",
-                                        disable_notification=True)
+                    try:
+                        if isSendURLValid(url):
+                            cr_ref.set({
+                                "sendurl": url
+                            }, merge=True)
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="✅ URL set as:\n\n" + url + "\n\n/getsendurl to retrieve url",
+                                            disable_notification=True)
+                        else:
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="⚠ Invalid URL!\n\nURL Example: temptaking.ado.sg/group/<uniqueCode>",
+                                            disable_notification=True)
+                    except (MissingPrefixError, InvalidURLError, InvalidCodeError) as e:
+                        print("[main.py] webhook: /setcheckurl -- " + str(e))
+                        #TODO add bot msg
+                    except:
+                        print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
+                        #TODO add bot msg
             elif message.startswith("/getsendurl"):
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
@@ -184,7 +195,7 @@ def webhook(request):
                     query_ref = db.collection("querying").document("replies")
                     
                     query_ref.set({
-                        str(chatID): "setsender " + getDateTime()
+                        str(chatID): "setsender " + Time.getDateTime()
                     }, merge=True)
 
                     bot.sendMessage(chat_id=chatID, 
@@ -231,7 +242,7 @@ def webhook(request):
 
                     query_ref = db.collection("querying").document("replies")
                     query_ref.set({
-                        str(chatID): "sendtemp " + getDateTime()
+                        str(chatID): "sendtemp " + Time.getDateTime()
                     }, merge=True)
 
                     bot.sendMessage(chat_id=chatID, 
@@ -299,7 +310,7 @@ def webhook(request):
                     })
 
                     #ensure query time is not too long ago (1 min)
-                    if not isQueryValid(getDateTimeObject(queryType[10:])):
+                    if not isQueryValid(Time.getDateTimeObject(queryType[10:])):
                         bot.sendMessage(chat_id=chatID, 
                                     text="⌛ Command /setsender timeout. Please try again",
                                     reply_markup=telegram.ReplyKeyboardRemove(),
@@ -336,7 +347,7 @@ def webhook(request):
                     })
 
                     #ensure query time is not too long ago (1 min)
-                    if not isQueryValid(getDateTimeObject(queryType[9:])):
+                    if not isQueryValid(Time.getDateTimeObject(queryType[9:])):
                         bot.sendMessage(chat_id=chatID, 
                                     text="⌛ Command /sendtemp timeout. Please try again",
                                     reply_markup=telegram.ReplyKeyboardRemove(),
@@ -380,31 +391,6 @@ def webhook(request):
                                         parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                         disable_notification=True)
     return "ok"
-
-def isCheckURLValid(url):
-    try:
-        if track.getGroupData(url) == None:
-            return False
-        return True
-    except:
-        return False
-
-def isSendURLValid(url):
-    TITLE = "Temperature Recording"
-    HEADER = "RECORD YOUR TEMPERATURE"
-    INVALID = "Invalid code"
-
-    try:
-        request = requests.post(url=url)
-        response = request.text
-        if INVALID in response:
-            return False
-        elif TITLE not in response or HEADER not in response:
-            return False
-        else:
-            return True
-    except:
-        return False
 
 def isSendPINValid(pin):
     try:
@@ -450,10 +436,8 @@ def getTemperatureKeyboardMarkup():
 
 def sendTemperature(url, memberId, temperature, pin):
     GROUPCODE = url[url.rindex("/") + 1:]
-    DATETIME = getDateTime()
-    DATE = DATETIME.split(" ")[0]
-    TIME = DATETIME.split(" ")[1]
-    MERIDIES = getMeridies(TIME)
+    DATE = Time.getDate()
+    MERIDIES = Time.getMeridies(Time.getTime())
 
     PAYLOAD = {"groupCode": GROUPCODE,
                 "date": DATE,
@@ -465,18 +449,9 @@ def sendTemperature(url, memberId, temperature, pin):
     request = requests.post(url=SEND_URL, data=PAYLOAD)
     return request.text
 
-def getMeridies(time):
-    return MERIDIES_AM if int(time.split(":")[0]) < 12 else MERIDIES_PM
-
-def getDateTime():
-    now = datetime.now(timezone(TIME_ZONE))
-    return now.strftime("%d/%m/%Y %H:%M:%S")
-
-def getDateTimeObject(dateTimeString):
-    return datetime.strptime(dateTimeString, "%d/%m/%Y %H:%M:%S")
-
 def isQueryValid(queryTime):
-    timeNow = getDateTimeObject(getDateTime())
+    timeNow = Time.getDateTimeObject(Time.getDateTime())
+
     try:
         delta = timeNow - queryTime
         if delta.total_seconds() / 60 < 1:
@@ -497,4 +472,4 @@ def getSendTempCriteria(doesURLexist, doesPINexist, doesMemberexist):
         criteria += (x + ": " + criteriaText[x])
     return criteria
 
-print("-----> V1.1 Deployment success! <-----")
+print("-----> V1.2 Deployment success! <-----")

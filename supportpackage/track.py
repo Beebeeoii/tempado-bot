@@ -1,40 +1,25 @@
-from datetime import datetime
-from pytz import timezone
+from time_helper import Time
 import requests
 import json
 import telegram
 import os
 
 TRACK_URL = os.environ["TRACK_URL"]
-TIME_ZONE = os.environ["TIME_ZONE"]
-MERIDIES_AM = "AM"
-MERIDIES_PM = "PM"
+Time = Time()
 
-def getDateTime():
-    now = datetime.now(timezone(TIME_ZONE))
-    return now.strftime("%d/%m/%Y %H:%M:%S")
+def getGroupData(url):
+    OVERVIEW_CODE = url[url.rindex("/") + 1:]
 
-def getMeridiesFromTime(time):
-    return MERIDIES_AM if int(time.split(":")[0]) < 12 else MERIDIES_PM
+    PAYLOAD = {"overviewCode": OVERVIEW_CODE,
+        "date": Time.getDate(),
+        "timezone": Time.TIME_ZONE}
+    
+    response = requests.post(url=TRACK_URL, data=PAYLOAD, timeout=10)
 
-def getGroupData(groupURL):
-    try:
-        OVERVIEW_CODE = groupURL[groupURL.rindex("/") + 1:]
-
-        PAYLOAD = {"overviewCode": OVERVIEW_CODE,
-            "date": getDateTime().split(" ")[0],
-            "timezone": TIME_ZONE}
-        
-        response = requests.post(url=TRACK_URL, data=PAYLOAD, timeout=10)
-
-        if response.status_code == requests.codes.ok:
-            data = json.loads(response.text)
-
-            return data
-        else:
-            response.raise_for_status()
-    except:
-        print("[track.py] getGroupTempData(): ERROR occured")
+    if response.status_code == requests.codes.ok:
+        return json.loads(response.text)
+    else:
+        response.raise_for_status()
 
 def getGroupNameData(data):
     return data["groupName"]
@@ -50,7 +35,7 @@ def formatReminder(data):
         return emoji + " " + text + " " + emoji
 
     MEMBER_TEMP_DATA = getMemberTempData(data)
-    MERIDIES = getMeridiesFromTime(getDateTime().split(" ")[1])
+    MERIDIES = Time.getMeridiesFromTime(Time.getTime())
 
     message = []
     HEADING = "🏮 " + getGroupNameData(data) + " 🏮\n"
@@ -61,7 +46,7 @@ def formatReminder(data):
     missingAM = missingRecords["amMissing"]
     missingPM = missingRecords["pmMissing"]
 
-    if MERIDIES == MERIDIES_PM:
+    if MERIDIES == Time.MERIDIES_PM:
         if len(missingPM) == 0:
             message.append("🏆 All submitted PM temperature\! Well done\!\n")
         else:
@@ -81,18 +66,18 @@ def formatReminder(data):
 
 def getMissingMembers(memberTempData, meridies):
     def getRecords(memberData):
-        records = {MERIDIES_AM: False, MERIDIES_PM: False}
+        records = {Time.MERIDIES_AM: False, Time.MERIDIES_PM: False}
         TEMP_RECORDS = memberData["tempRecords"]
 
         for record in TEMP_RECORDS:
             timeSent = record["recordForDateTime"]
-            MERIDIES = getMeridiesFromTime(timeSent)
-            if MERIDIES == MERIDIES_AM and not records[MERIDIES_AM]:
+            MERIDIES = Time.getMeridiesFromTime(timeSent)
+            if MERIDIES == Time.MERIDIES_AM and not records[Time.MERIDIES_AM]:
                 records[MERIDIES_AM] = True
-            elif MERIDIES == MERIDIES_PM and not records[MERIDIES_PM]:
+            elif MERIDIES == Time.MERIDIES_PM and not records[Time.MERIDIES_PM]:
                 records[MERIDIES_PM] = True
 
-            if records[MERIDIES_AM] and records[MERIDIES_PM]:
+            if records[Time.MERIDIES_AM] and records[Time.MERIDIES_PM]:
                 return records
             
         return records
@@ -104,12 +89,12 @@ def getMissingMembers(memberTempData, meridies):
     for member in memberTempData:
         record = getRecords(member)
 
-        if meridies == MERIDIES_PM:
-            isPMSent = record[MERIDIES_PM]
+        if meridies == Time.MERIDIES_PM:
+            isPMSent = record[Time.MERIDIES_PM]
             if not isPMSent:
                 pmMissing.append(member["identifier"].upper())
 
-        isAMSent = record[MERIDIES_AM]
+        isAMSent = record[Time.MERIDIES_AM]
         if not isAMSent:
             amMissing.append(member["identifier"].upper())
 
