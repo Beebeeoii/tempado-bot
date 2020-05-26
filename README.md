@@ -5,23 +5,26 @@ A telegram bot for temptaking.ado.sg!
 This bot was made specifically for personels required to submit twice daily temperatures on temptaking.ado.sg. It was made to better lifes by reducing the hassle of manually submitting temperatures through the website and checking of who has yet to send their temperatures.
 
 ## Features
-1. Send your temperature directly through me on telegram after a one-time setup
-2. Set up daily reminders for AM and PM temperature (**recommended for groups**)
-3. Check who have not send their temperatures for the day
+1. One-time user-friendly set up!
+2. Send your temperatures directly on telegram after a one-time setup
+3. Set up daily reminders for AM and PM temperature (**recommended for groups**)
+4. Check who have not send their temperatures for the day (**mainly for commanders who have the link - it is different from the one used to send temperatures**)
+5. Check your personal temperature submission history for the day
 
-# This is NOT an automated bot that automatically sends a temperauture for you daily. You ARE to take your temperature using a thermometer before using this tool.
+# This is NOT an automated bot that automatically sends a temperauture for you daily. It does not randomise temperatures for you. You ARE to take your temperature using a thermometer before using this tool.
 
 ## How to use
-Search me up on telegram @ TempAdoBot or simply click http://t.me/TempAdoBot
+Search me up on telegram @TempAdoBot or simply click http://t.me/TempAdoBot
 
 1. Sending of temperature (**__/sendtemp__**)
-   - **__/setsendurl__** {URL}
-     - Set up your URL to that you use to send your temperatures (Eg. https://temptaking.ado.sg/group/a-unique-code)
-     - This is **required** before you can execute **__/setsender__**
-   - **__/setsendpin__** {4-digit PIN}
-     - Set up your 4-digit PIN you use to send your temperatures (Eg. 0000)
-   - **__/setsender__**
-     - Set who you are whenever you send a temperature through the bot
+   - **__/setup__**
+     - Use this to setup your PIN, URL and who you are, all hassle-free!
+   - **__/pin__**
+     - View/change your 4-digit PIN to send your temperatures (Eg. 0000)
+   - **__/url__**
+     - View/change your URL to send your temperatures (Eg. https://temptaking.ado.sg/group/unique-code)
+   - **__/sender__**
+     - View/change your name to send your temperatures
      - Select your name from the custom telegram keyboard
    - These three items (URL, PIN and sender) must be set before using /sendtemp
    - It is **highly encouraged** that this is done through direct messages to the bot and not on groups lest group spams
@@ -33,12 +36,17 @@ Search me up on telegram @ TempAdoBot or simply click http://t.me/TempAdoBot
    - **__/unsubscribe__**
      - Unsubscribes to daily reminders for both AM and PM temperatures
      - You will not receive any reminders from the bot anymore!
-3. Checking of members who have not sent their temperatures for the day (**__/forcecheck__**)
-   - **__/setcheckurl__** {URL}
-     - Set up your URL to that you use to send your temperatures (Eg. https://temptaking.ado.sg/overview/another-unique-code)
-     - This must be done before using **__/forcecheck__**
+3. Checking of members who have not sent their temperatures for the day
+   - **__/track__**
+     - View/change the URL you use see everyone's temperature in the group (Eg. https://temptaking.ado.sg/overview/another-unique-code)
+4. Checking of your personal temperature submission history
+   - **__/history__**
+     - View your AM and PM temperature submissions for the day
 
-For more info, seek help from the bot by using **__/help__** :) 
+For more info, seek help from the bot by using **__/help__** :)
+
+## Changelog
+[Click to view changelog](/CHANGELOG.md)
 
 ## Future plans:
 - [ ] Stop this bot (for there is no reason for this after this COVID period)
