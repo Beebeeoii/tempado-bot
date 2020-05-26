@@ -5,7 +5,7 @@ A telegram bot for temptaking.ado.sg!
 This bot was made specifically for personels required to submit twice daily temperatures on temptaking.ado.sg. It was made to better lifes by reducing the hassle of manually submitting temperatures through the website and checking of who has yet to send their temperatures.
 
 ## Screenshots
-![Preview of /setup](/screenshot1.jpg=250x) ![Preview of /help](/screenshot2.jpg=250x) 
+<img src = "/screenshot.jpg" width="48"> <img src = "/screenshot1.jpg" width="48">
 
 ## Features
 1. One-time user-friendly set up!
