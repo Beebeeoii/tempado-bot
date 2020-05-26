@@ -1,4 +1,4 @@
-from time_helper import Time
+from .time_helper import Time
 import requests
 import json
 import telegram
@@ -73,9 +73,9 @@ def getMissingMembers(memberTempData, meridies):
             timeSent = record["recordForDateTime"]
             MERIDIES = Time.getMeridiesFromTime(timeSent)
             if MERIDIES == Time.MERIDIES_AM and not records[Time.MERIDIES_AM]:
-                records[MERIDIES_AM] = True
+                records[Time.MERIDIES_AM] = True
             elif MERIDIES == Time.MERIDIES_PM and not records[Time.MERIDIES_PM]:
-                records[MERIDIES_PM] = True
+                records[Time.MERIDIES_PM] = True
 
             if records[Time.MERIDIES_AM] and records[Time.MERIDIES_PM]:
                 return records

@@ -4,13 +4,15 @@ import requests
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-from supportpackage import track
-from supportpackage.url_validator import *
-from supportpackage.time_helper import Time
+from packages import track
+from packages.time_helper import Time
+from packages.url_validator import *
+from packages.pin_validator import *
 
 FIREBASE_PROJECT_ID = os.environ["FIREBASE_PROJECT_ID"]
 BOT_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SEND_URL = os.environ["SEND_URL"]
+HISTORY_URL = os.environ["HISTORY_URL"]
 
 #firebase init
 cred = credentials.ApplicationDefault()
@@ -20,6 +22,8 @@ firebase_admin.initialize_app(cred, {
 
 db = firestore.client()
 
+Time = Time()
+
 def webhook(request):
     print("Request received!", request)
 
@@ -28,12 +32,66 @@ def webhook(request):
     if request.method == "POST":
         update = telegram.Update.de_json(request.get_json(force=True), bot)
 
+        callbackQuery = update.callback_query
+        
+        if callbackQuery != None:
+            query = callbackQuery.data
+            chatID = callbackQuery.message.chat_id
+            
+            if query == "PIN":
+                bot.sendMessage(chat_id=chatID, 
+                                text="Please enter your 4-digit PIN",
+                                disable_notification=True)
+                query_ref = db.collection("querying").document("replies")
+                query_ref.set({
+                    str(chatID): "setpin " + Time.getDateTime()
+                }, merge=True)
+            elif query == "URL":
+                bot.sendMessage(chat_id=chatID, 
+                                text="Please enter your URL\n\nE.g: https://temptaking.ado.sg/group/<uniqueCode>",
+                                disable_notification=True)
+                query_ref = db.collection("querying").document("replies")
+                query_ref.set({
+                    str(chatID): "seturl " + Time.getDateTime()
+                }, merge=True)
+            elif query == "SENDER":
+                cr_details_dict = db.collection("chatrooms").document(str(chatID)).get().to_dict()
+                doesURLexist = "sendurl" in cr_details_dict
+                
+                if doesURLexist:
+                    reply_markup = getMemberNamesKeyboardMarkup(cr_details_dict["sendurl"])
+
+                    query_ref = db.collection("querying").document("replies")
+                    
+                    query_ref.set({
+                        str(chatID): "setsender " + Time.getDateTime()
+                    }, merge=True)
+
+                    bot.sendMessage(chat_id=chatID, 
+                                    text="👾 Please select your name below", 
+                                    reply_markup=reply_markup,
+                                    disable_notification=True)
+                else:
+                    bot.sendMessage(chat_id=chatID, 
+                                    text="⚠ URL required to set sender!\n\n/url to set url",
+                                    disable_notification=True)
+            elif query == "TRACKURL":
+                bot.sendMessage(chat_id=chatID, 
+                                text="Please enter the tracking URL\n\nE.g: https://temptaking.ado.sg/overview/<uniqueCode>",
+                                disable_notification=True)
+                query_ref = db.collection("querying").document("replies")
+                query_ref.set({
+                    str(chatID): "settrackurl " + Time.getDateTime()
+                }, merge=True)
+
+            return
+
         if update == None or update.message == None or update.message.text == None:
             print("Error: Update or Message == None")
             return
 
-        chatID = update.message.chat_id
         message = update.message.text
+        chatID = update.message.chat_id
         
         print(str(chatID), update.message.from_user.username, message)
 
@@ -57,187 +115,182 @@ def webhook(request):
                                     "🏹 send your temperatures directly through me\n" + \
                                     "🏹 check who have not send their temperatures\n\n" + \
                                     "*It is your responsibility to take your temperatures diligently before sending*\n\n" + \
+                                    "/setup to start sending temperatures\n" + \
                                     "/help for all available commands"
                 bot.sendMessage(chat_id=chatID,
                                 text=welcomeMessage,
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 disable_notification=True)
-            elif message.startswith("/setcheckurl"):
-                messageSplit = message.split(" ")
-                if len(messageSplit) != 2:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ Invalid Syntax!\n\nSyntax: /setcheckurl <url>",
-                                    disable_notification=True)
-                else:
-                    url = messageSplit[1]
-                    try:
-                        if isCheckURLValid(url):
-                            cr_ref.set({
-                                "checkurl": url
-                            }, merge=True)
-                            bot.sendMessage(chat_id=chatID, 
-                                            text="✅ URL set as:\n\n" + url + "\n\n/getcheckurl to retrieve url",
-                                            disable_notification=True)
-                        else:
-                            bot.sendMessage(chat_id=chatID, 
-                                            text="⚠ Invalid URL!\n\nURL Example: temptaking.ado.sg/overview/<uniqueCode>",
-                                            disable_notification=True)
-                    except (MissingPrefixError, InvalidURLError) as e:
-                        print("[main.py] webhook: /setcheckurl -- " + str(e))
-                        #TODO add bot msg
-                    except:
-                        print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
-                        #TODO add bot msg
-            elif message.startswith("/getcheckurl"):
-                cr_details_dict = cr_details.to_dict()
-                doesURLexist = "checkurl" in cr_details_dict
-                if doesURLexist:
-                    url = cr_details_dict["checkurl"]
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="😺 URL to check temperature records:\n\n" + url,
-                                    disable_notification=True)
-                else:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ URL not found!\n\n/setcheckurl to set url",
-                                    disable_notification=True)
-            elif message.startswith("/forcecheck"):
-                cr_details_dict = cr_details.to_dict()
-                doesURLexist = "checkurl" in cr_details_dict
-                
-                if doesURLexist:
-                    data = track.getGroupData(cr_details_dict["checkurl"])
-                    text = track.formatReminder(data)
-                    bot.sendMessage(chat_id=chatID, 
-                                    text=text, 
-                                    parse_mode=telegram.ParseMode.MARKDOWN_V2,
-                                    disable_notification=True)
-                else:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ URL not found!\n\n/setcheckurl to set url",
-                                    disable_notification=True)
-            elif message.startswith("/setsendurl"):
-                messageSplit = message.split(" ")
-                if len(messageSplit) != 2:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ Invalid Syntax!\n\nSyntax: /setsendurl <url>",
-                                    disable_notification=True)
-                else:
-                    url = messageSplit[1]
-                    try:
-                        if isSendURLValid(url):
-                            cr_ref.set({
-                                "sendurl": url
-                            }, merge=True)
-                            bot.sendMessage(chat_id=chatID, 
-                                            text="✅ URL set as:\n\n" + url + "\n\n/getsendurl to retrieve url",
-                                            disable_notification=True)
-                        else:
-                            bot.sendMessage(chat_id=chatID, 
-                                            text="⚠ Invalid URL!\n\nURL Example: temptaking.ado.sg/group/<uniqueCode>",
-                                            disable_notification=True)
-                    except (MissingPrefixError, InvalidURLError, InvalidCodeError) as e:
-                        print("[main.py] webhook: /setcheckurl -- " + str(e))
-                        #TODO add bot msg
-                    except:
-                        print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
-                        #TODO add bot msg
-            elif message.startswith("/getsendurl"):
-                cr_details_dict = cr_details.to_dict()
-                doesURLexist = "sendurl" in cr_details_dict
-                if doesURLexist:
-                    url = cr_details_dict["sendurl"]
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="😺 URL to send temperature records:\n\n" + url,
-                                    disable_notification=True)
-                else:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ URL not found!\n\n/setsendurl to set url",
-                                    disable_notification=True)
-            elif message.startswith("/setsendpin"):
-                messageSplit = message.split(" ")
-                
-                if len(messageSplit) != 2:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ Invalid Syntax!\n\nSyntax: /setsendpin <4-digit PIN>",
-                                    disable_notification=True)
-                else:
-                    pin = messageSplit[1]
-                    if isSendPINValid(pin):
-                        cr_ref.set({
-                            "sendpin " + str(update.message.from_user.id): pin
-                        }, merge=True)
-                        bot.sendMessage(chat_id=chatID, 
-                                        text="✅ " + update.message.from_user.first_name + "'s PIN set as: " + pin + "\n\n/getsendpin to retrieve PIN",
-                                        disable_notification=True)
-                    else:
-                        bot.sendMessage(chat_id=chatID, 
-                                        text="⚠ Invalid PIN!\n\nPINs are 4-digit numbers! Eg: 0000",
-                                        disable_notification=True)
-            elif message.startswith("/getsendpin"):
-                cr_details_dict = cr_details.to_dict()
-                doesPINexist = ("sendpin " + str(update.message.from_user.id)) in cr_details_dict
-
-                if doesPINexist:
-                    pin = cr_details_dict["sendpin " + str(update.message.from_user.id)]
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="🔑 " +  update.message.from_user.first_name + "'s PIN: " + pin,
-                                    disable_notification=True)
-                else:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠" + update.message.from_user.first_name + "'s PIN not found!\n\n/setsendpin to set PIN",
-                                    disable_notification=True)
-            elif message.startswith("/setsender"):
-                cr_details_dict = cr_details.to_dict()
-                doesURLexist = "sendurl" in cr_details_dict
-                if doesURLexist:
-                    reply_markup = getMemberNamesKeyboardMarkup(cr_details_dict["sendurl"])
-
-                    query_ref = db.collection("querying").document("replies")
-                    
-                    query_ref.set({
-                        str(chatID): "setsender " + Time.getDateTime()
-                    }, merge=True)
-
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="👾 Please select your name below", 
-                                    reply_markup=reply_markup,
-                                    disable_notification=True)
-                else:
-                    bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ URL required but not found!\n\n/setsendurl to set url",
-                                    disable_notification=True)
             elif message.startswith("/help"):
-                header = "✋ *TempAdo Telegram Bot Help Page* ✋\n\n"
+                header = "✋ *TempAdoBot Help Page* ✋\n\n"
                 title = "List of commands:\n"
 
                 commands = "/help \- help page for this bot\n\n" + \
-                            "📣Everything related to *_checking_ temperature records*:\n" + \
-                            "/setcheckurl \- sets url to check temperature submissions\n" + \
-                            "/getcheckurl \- retrieves url to check temperature submissions, if set\n" + \
-                            "/forcecheck \- checks temperature submissions, url must be set beforehand\n\n" + \
-                            "📣Everything related to *_sending_ temperature records*:\n" + \
-                            "/setsendurl \- sets url to send temperature submissions\n" + \
-                            "/getsendurl \- retrives url to send temperature submissions, if set\n" + \
-                            "/setsendpin \- sets pin\n" + \
-                            "/getsendpin \- retrieves pin, if set\n" + \
-                            "/setsender \- sets who you are when you execute /sendtemp\n" + \
-                            "/sendtemp \- sends your temperature \(requires sendurl, sendpin and sender to be set\)\n\n" + \
-                            "💡 Subscribe to daily AM/PM temperature reminders\n" + \
-                            "/subscribe \- subscribes to daily AM and PM temperature reminders at 1100 and 1530 respectively\n" + \
-                            "/unsubscribe \- unsubscribes to daily AM and PM temperature reminders"
+                            "📣 If you are new:\n" + \
+                            "/setup \- a one\-time setup before being able to upload temperatures\n\n" + \
+                            "📣 Uploading of temperature records:\n" + \
+                            "/pin \- change your pin\n" + \
+                            "/url \- change your url\n" + \
+                            "/sender \- change who you are \n" + \
+                            "/history \- view your temperature submissions for today\n" + \
+                            "/sendtemp \- send your temperature\n\n" + \
+                            "📣 Tracking of everyone\'s temperature records \(For commanders\?\):\n" + \
+                            "/track \- see who have yet to upload their temperatures\n\n" + \
+                            "💡 Subscribing to reminders\n" + \
+                            "/subscribe \- subscribe to twice daily temperature reminders at 1100 and 1530\n" + \
+                            "/unsubscribe \- unsubscribe to twice daily temperature reminders"
                             
                 text = header + title + commands
                 bot.sendMessage(chat_id=chatID, 
                                 text=text, 
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 disable_notification=True)
+            elif message.startswith("/setup"):
+                messageText = "__Getting started__\n\n" + \
+                                "1️⃣ Setup your PIN\n" + \
+                                "2️⃣ Setup you URL\n" + \
+                                "3️⃣ Setup your identity\n" + \
+                                "4️⃣ Start sending your temperatures\!"
+
+                button_list = [
+                        [telegram.InlineKeyboardButton("🔑 Set PIN", callback_data="PIN"),
+                        telegram.InlineKeyboardButton("🌐 Set URL", callback_data="URL")],
+                        [telegram.InlineKeyboardButton("🙆‍♂️ Set sender", callback_data="SENDER")]
+                ]
+
+                reply_markup = telegram.InlineKeyboardMarkup(button_list)
+                bot.sendMessage(chat_id=chatID, 
+                                text=messageText,
+                                reply_markup=reply_markup,
+                                parse_mode=telegram.ParseMode.MARKDOWN_V2,
+                                disable_notification=True)
+            elif message.startswith("/pin"):
+                cr_details_dict = cr_details.to_dict()
+                doesPINexist = ("sendpin " + str(update.message.from_user.id)) in cr_details_dict
+
+                pin = None
+                inlineButtonText = "🔑 Set PIN"
+                messageText = "🔒 You have not setup your PIN!"
+
+                if doesPINexist:
+                    pin = cr_details_dict["sendpin " + str(update.message.from_user.id)]
+                    inlineButtonText = "🔑 Change PIN"
+                    messageText = "🔓 Your PIN is: " + pin
+                
+                button_list = [
+                        telegram.InlineKeyboardButton(inlineButtonText, callback_data="PIN")
+                ]
+
+                reply_markup = telegram.InlineKeyboardMarkup([button_list])
+                bot.sendMessage(chat_id=chatID, 
+                                            text=messageText,
+                                            reply_markup=reply_markup,
+                                            disable_notification=True)
+            elif message.startswith("/url"):
+                cr_details_dict = cr_details.to_dict()
+                doesURLexist = "sendurl" in cr_details_dict
+
+                url = None
+                inlineButtonText = "🌐 Set URL"
+                messageText = "⚠ You have not setup your URL!"
+
+                if doesURLexist:
+                    url = cr_details_dict["sendurl"]
+                    inlineButtonText = "🌐 Change URL"
+                    messageText = "🌏 URL to send temperature records:\n\n" + url
+
+                button_list = [
+                        telegram.InlineKeyboardButton(inlineButtonText, callback_data="URL")
+                ]
+
+                reply_markup = telegram.InlineKeyboardMarkup([button_list])
+                bot.sendMessage(chat_id=chatID, 
+                                text=messageText,
+                                reply_markup=reply_markup,
+                                disable_notification=True)
+            elif message.startswith("/sender"):
+                cr_details_dict = cr_details.to_dict()
+                doesSenderExist = str(update.message.from_user.id) in cr_details_dict
+
+                sender = None
+                inlineButtonText = "🙆‍♂️ Set sender"
+                messageText = "👻 You have not identified yourself!"
+
+                if doesSenderExist:
+                    sender = cr_details_dict[str(update.message.from_user.id)]
+                    inlineButtonText = "💁‍♂️ Change sender"
+                    messageText = "🧔 " + update.message.from_user.first_name + " is currently bound to " + sender
+                
+                button_list = [
+                        telegram.InlineKeyboardButton(inlineButtonText, callback_data="SENDER")
+                ]
+
+                reply_markup = telegram.InlineKeyboardMarkup([button_list])
+                bot.sendMessage(chat_id=chatID, 
+                                text=messageText,
+                                reply_markup=reply_markup,
+                                disable_notification=True)
+            elif message.startswith("/history"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
+                cr_details_dict = cr_details.to_dict()
+                doesURLexist = "sendurl" in cr_details_dict
+                doesPINexist = "sendpin " + str(update.message.from_user.id) in cr_details_dict
+                doesSenderExist = str(update.message.from_user.id) in cr_details_dict
+
+                if doesURLexist and doesPINexist and doesSenderExist:
+                    URL = cr_details_dict["sendurl"]
+                    GROUPCODE = URL[URL.rindex("/") + 1:]
+                    MEMBERNAME = cr_details_dict[str(update.message.from_user.id)]
+                    MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
+                    PIN = cr_details_dict["sendpin " + str(update.message.from_user.id)]
+
+                    data = {
+                        "groupCode": GROUPCODE,
+                        "memberId": MEMBERID,
+                        "pin": PIN,
+                        "startDate": Time.getDate(),
+                        "endDate": Time.getDate(),
+                        "timezone": Time.TIME_ZONE
+                    }
+
+                    try:
+                        response = requests.post(url=HISTORY_URL, data=data).text
+                        responseDict = json.loads(response)[0]
+                        latestAM = responseDict["latestAM"]
+                        latestPM = responseDict["latestPM"]
+
+                        if latestAM == "":
+                            latestAM = "NO DATA"
+                        if latestPM == "":
+                            latestPM = "NO DATA"
+
+                        messageText = "☀ AM temperature: " + latestAM + "\n" + \
+                                        "🌙 PM temperature: " + latestPM
+                    except:
+                        messageText = "😢 Looks like temptaking.ado.sg is down. Please try again later!"
+
+                    bot.sendMessage(chat_id=chatID, 
+                                    text=messageText,
+                                    disable_notification=True)
+                else:
+                    criteria = getSendTempCriteria(doesURLexist, doesPINexist, doesSenderExist)
+                    button_list = getCriteriaFailedInline(doesURLexist, doesPINexist, doesSenderExist)
+
+                    reply_markup = telegram.InlineKeyboardMarkup([button_list])
+
+                    bot.sendMessage(chat_id=chatID, 
+                                    text=criteria,
+                                    reply_markup=reply_markup,
+                                    parse_mode=telegram.ParseMode.MARKDOWN_V2,
+                                    disable_notification=True)
             elif message.startswith("/sendtemp"):
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
                 doesPINexist = "sendpin " + str(update.message.from_user.id) in cr_details_dict
-                doesMemberexist = str(update.message.from_user.id) in cr_details_dict
+                doesSenderExist = str(update.message.from_user.id) in cr_details_dict
 
-                if doesURLexist and doesPINexist and doesMemberexist:
+                if doesURLexist and doesPINexist and doesSenderExist:
                     reply_markup = getTemperatureKeyboardMarkup()
 
                     query_ref = db.collection("querying").document("replies")
@@ -246,16 +299,45 @@ def webhook(request):
                     }, merge=True)
 
                     bot.sendMessage(chat_id=chatID, 
-                                    text="📤 Please select your temperature below 📤\n\n🛑 __You are reminded to take your temperature first\!__", 
+                                    text="📤 Please select your temperature below 📤\n\n__You are reminded to take your temperature first\!__", 
                                     reply_markup=reply_markup,
                                     parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                     disable_notification=True)
                 else:
-                    criteria = getSendTempCriteria(doesURLexist, doesPINexist, doesMemberexist)
+                    criteria = getSendTempCriteria(doesURLexist, doesPINexist, doesSenderExist)
+                    button_list = getCriteriaFailedInline(doesURLexist, doesPINexist, doesSenderExist)
+
+                    reply_markup = telegram.InlineKeyboardMarkup([button_list])
+
                     bot.sendMessage(chat_id=chatID, 
                                     text=criteria,
+                                    reply_markup=reply_markup,
                                     parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                     disable_notification=True)
+            elif message.startswith("/track"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
+                cr_details_dict = cr_details.to_dict()
+                doesURLexist = "checkurl" in cr_details_dict
+
+                inlineButtonText = "🌐 Set tracking URL"
+                messageText = "⚠ You have not setup your URL\!"
+
+                if doesURLexist:
+                    inlineButtonText = "🌐 Change tracking URL"
+                    data = track.getGroupData(cr_details_dict["checkurl"])
+                    messageText = track.formatReminder(data)
+
+                button_list = [
+                        telegram.InlineKeyboardButton(inlineButtonText, callback_data="TRACKURL")
+                ]
+
+                reply_markup = telegram.InlineKeyboardMarkup([button_list])
+                bot.sendMessage(chat_id=chatID, 
+                                text=messageText,
+                                parse_mode=telegram.ParseMode.MARKDOWN_V2,
+                                reply_markup=reply_markup,
+                                disable_notification=True)
             elif message.startswith("/subscribe") or message.startswith("/unsubscribe"):
                 sub_ref = db.collection("subscribers").document("reminderSubscribers")
                 sub_details = sub_ref.get()
@@ -305,6 +387,8 @@ def webhook(request):
                 queryType = query_details_dict[str(chatID)]
 
                 if queryType.startswith("setsender"):
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                     query_ref.update({
                         str(chatID): firestore.DELETE_FIELD
                     })
@@ -328,7 +412,7 @@ def webhook(request):
                         members = list(map(lambda x: x["identifier"], getMemberCodeData(URL)))
                         if message not in members:
                             bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ " + message + " not a valid member! /setsender to try again",
+                                    text="⚠ " + message + " not a valid member! /sender to try again",
                                     reply_markup=telegram.ReplyKeyboardRemove(),
                                     disable_notification=True)
                             return
@@ -342,6 +426,7 @@ def webhook(request):
                                     reply_markup=telegram.ReplyKeyboardRemove(),
                                     disable_notification=True)
                 elif queryType.startswith("sendtemp"):
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.UPLOAD_DOCUMENT)
                     query_ref.update({
                         str(chatID): firestore.DELETE_FIELD
                     })
@@ -371,12 +456,12 @@ def webhook(request):
                             reply = sendTemperature(URL, MEMBERID, TEMPERATURE, PIN)
                             if reply == "OK":
                                 bot.sendMessage(chat_id=chatID, 
-                                                text="🌡 Temperature sent!\n\n/forcecheck to see who haven't send!",
+                                                text="🌡 Temperature sent!\n\n",
                                                 reply_markup=telegram.ReplyKeyboardRemove(),
                                                 disable_notification=True)
                             elif "Wrong pin" in reply:
                                 bot.sendMessage(chat_id=chatID,
-                                            text="⚠ PIN inputted was wrong!\n\n/setsendpin to reset pin!",
+                                            text="⚠ PIN inputted was wrong!\n\n/pin to reset pin!",
                                             reply_markup=telegram.ReplyKeyboardRemove(),
                                             disable_notification=True)
                         except :
@@ -390,17 +475,116 @@ def webhook(request):
                                         text=criteria,
                                         parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                         disable_notification=True)
+                elif queryType.startswith("setpin"):
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.UPLOAD_DOCUMENT)
+
+                    query_ref.update({
+                        str(chatID): firestore.DELETE_FIELD
+                    })
+
+                    #ensure query time is not too long ago (1 min)
+                    if not isQueryValid(Time.getDateTimeObject(queryType[7:])):
+                        bot.sendMessage(chat_id=chatID, 
+                                    text="⌛ Command timeout. Please try again",
+                                    disable_notification=True)
+                        return
+
+                    pin = message
+
+                    try:
+                        if isSendPINValid(pin):
+                            cr_ref.set({
+                                "sendpin " + str(update.message.from_user.id): pin
+                            }, merge=True)
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="✅ " + update.message.from_user.first_name + "'s PIN set as: " + pin + "\n\n/pin to retrieve PIN",
+                                            disable_notification=True)
+                        else:
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="⚠ Invalid PIN!\n\nPINs are 4-digit numbers! Eg: 0000",
+                                            disable_notification=True)
+                    except (PINLengthError, ValueError) as e:
+                        print("[main.py] webhook: /pin -- " + str(e))
+                        bot.sendMessage(chat_id=chatID, 
+                                            text="⚠ Invalid PIN!\n\nPINs are 4-digit numbers! Eg: 0000",
+                                            disable_notification=True)
+                elif queryType.startswith("seturl"):
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.UPLOAD_DOCUMENT)
+
+                    query_ref.update({
+                        str(chatID): firestore.DELETE_FIELD
+                    })
+
+                    #ensure query time is not too long ago (1 min)
+                    if not isQueryValid(Time.getDateTimeObject(queryType[7:])):
+                        bot.sendMessage(chat_id=chatID, 
+                                        text="⌛ Command timeout. Please try again",
+                                        disable_notification=True)
+                        return
+
+                    url = message
+
+                    try:
+                        if isSendURLValid(url):
+                            cr_ref.set({
+                                "sendurl": url
+                            }, merge=True)
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="✅ URL set as:\n\n" + url,
+                                            disable_notification=True)
+                        else:
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/<uniqueCode>",
+                                            disable_notification=True)
+                    except (MissingPrefixError, InvalidURLError, InvalidCodeError) as e:
+                        print("[main.py] webhook: /setcheckurl -- " + str(e))
+                        bot.sendMessage(chat_id=chatID, 
+                                        text="⚠ " + str(e),
+                                        disable_notification=True)
+                    except:
+                        print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
+                        bot.sendMessage(chat_id=chatID, 
+                                        text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/<uniqueCode>",
+                                        disable_notification=True)
+                elif queryType.startswith("settrackurl"):
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.UPLOAD_DOCUMENT)
+
+                    query_ref.update({
+                        str(chatID): firestore.DELETE_FIELD
+                    })
+
+                    #ensure query time is not too long ago (1 min)
+                    if not isQueryValid(Time.getDateTimeObject(queryType[12:])):
+                        bot.sendMessage(chat_id=chatID, 
+                                        text="⌛ Command timeout. Please try again",
+                                        disable_notification=True)
+                        return
+
+                    url = message
+
+                    try:
+                        if isCheckURLValid(url):
+                            cr_ref.set({
+                                "checkurl": url
+                            }, merge=True)
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="✅ Tracking URL set as:\n\n" + url,
+                                            disable_notification=True)
+                        else:
+                            bot.sendMessage(chat_id=chatID, 
+                                            text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/overview/<uniqueCode>",
+                                            disable_notification=True)
+                    except (MissingPrefixError, InvalidURLError) as e:
+                        print("[main.py] webhook: /setcheckurl -- " + str(e))
+                        bot.sendMessage(chat_id=chatID, 
+                                        text="⚠ " + str(e),
+                                        disable_notification=True)
+                    except:
+                        print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
+                        bot.sendMessage(chat_id=chatID, 
+                                        text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/<uniqueCode>",
+                                        disable_notification=True)
     return "ok"
-
-def isSendPINValid(pin):
-    try:
-        int(pin)
-    except:
-        return False
-    if len(pin) != 4:
-        return False
-
-    return True
 
 def getMemberCodeData(url):
     request = requests.post(url=url)
@@ -437,7 +621,7 @@ def getTemperatureKeyboardMarkup():
 def sendTemperature(url, memberId, temperature, pin):
     GROUPCODE = url[url.rindex("/") + 1:]
     DATE = Time.getDate()
-    MERIDIES = Time.getMeridies(Time.getTime())
+    MERIDIES = Time.getMeridiesFromTime(Time.getTime())
 
     PAYLOAD = {"groupCode": GROUPCODE,
                 "date": DATE,
@@ -463,13 +647,23 @@ def isQueryValid(queryTime):
         print("[main.py] isQueryValid(): ERROR occurred")
         return False
 
-def getSendTempCriteria(doesURLexist, doesPINexist, doesMemberexist):
-    criteriaText = {"URL": "✔\n\n" if doesURLexist else "⚠ URL not set\! /setsendurl to set url\n\n",
-                "PIN": "✔\n\n" if doesPINexist else "⚠ PIN not set\! /setsendpin to set pin\n\n",
-                "Name": "✔" if doesMemberexist else "⚠ Sender not set\! /setsender to set sender"}
-    criteria = "🏁 Criteria before using /sendtemp\n\n"
+def getSendTempCriteria(doesURLexist, doesPINexist, doesSenderExist):
+    criteriaText = {"PIN": "✔\n\n" if doesPINexist else "⚠ PIN not set\!\n\n",
+                "URL": "✔\n\n" if doesURLexist else "⚠ URL not set\!\n\n",
+                "Sender": "✔" if doesSenderExist else "⚠ Sender not set\!"}
+    criteria = ""
     for x in criteriaText:
         criteria += (x + ": " + criteriaText[x])
     return criteria
+
+def getCriteriaFailedInline(doesURLexist, doesPINexist, doesSenderExist):
+    button_list = []
+    if not doesURLexist:
+        button_list.append(telegram.InlineKeyboardButton("🌐 Set URL", callback_data="URL"))
+    if not doesPINexist:
+        button_list.append(telegram.InlineKeyboardButton("🔑 Set PIN", callback_data="PIN"))
+    if not doesSenderExist:
+        button_list.append(telegram.InlineKeyboardButton("🙆‍♂️ Set sender", callback_data="SENDER"))
+    return button_list
 
 print("-----> V1.2 Deployment success! <-----")

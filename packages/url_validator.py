@@ -1,5 +1,5 @@
 import requests
-from track import getGroupData
+from .track import getGroupData
 
 def isCheckURLValid(url):
     if not url.startswith("http"):
