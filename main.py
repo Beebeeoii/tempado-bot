@@ -48,7 +48,7 @@ def webhook(request):
             query = callbackQuery.data
             chatID = callbackQuery.message.chat_id
 
-            print(TAG, UPDATE_1, chatID, update.message.from_user.first_name, query)
+            print(TAG, UPDATE_1, chatID, callbackQuery.message.from_user.first_name, query)
             
             if query == "PIN":
                 bot.sendMessage(chat_id=chatID, 
@@ -70,7 +70,7 @@ def webhook(request):
                 print(TAG, UPDATE_1, query, SUCCESSFUL)
             elif query == "SENDER":
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
-                
+
                 cr_details_dict = db.collection("chatrooms").document(str(chatID)).get().to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
                 
@@ -356,7 +356,9 @@ def webhook(request):
                 doesURLexist = "checkurl" in cr_details_dict
 
                 inlineButtonText = "🌐 Set tracking URL"
-                messageText = "⚠ You have not setup your URL\!"
+                messageText = "⚠ You have not setup your URL\!\n\n" + \
+                                "A tracking URL is required, which is different from the one used to send temperatures\n\n" + \
+                                "Use /history instead to view your temperature history"
 
                 if doesURLexist:
                     inlineButtonText = "🌐 Change tracking URL"

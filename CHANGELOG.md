@@ -3,7 +3,7 @@
 From the beginning of time...
 
 ## V1.2.1
-- {Optimisation} Included caching to improve latancy
+- {Optimisation} Included caching to improve latency
 - {UX} Included wider coverage of bot chat actions
 
 ## V1.2
