@@ -19,7 +19,7 @@ def isSendURLValid(url):
     HEADER = "RECORD YOUR TEMPERATURE"
     INVALID = "Invalid code"
 
-    request = requests.post(url=url)
+    request = requests.get(url=url)
     response = request.text
 
     if INVALID in response:
@@ -31,7 +31,7 @@ def isSendURLValid(url):
 
 class MissingPrefixError(Exception):
     def __init__(self, url):
-        super().__init__("Invalid URL. URL missing http prefix.")
+        super().__init__("URL missing http prefix. Do you mean https://" + url)
 
 class InvalidCodeError(Exception):
     def __init__(self, url):

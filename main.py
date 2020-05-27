@@ -14,6 +14,12 @@ BOT_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SEND_URL = os.environ["SEND_URL"]
 HISTORY_URL = os.environ["HISTORY_URL"]
 
+TAG = "main.py"
+UPDATE_1 = "CALLBACK"
+UPDATE_2 = "MESSAGE"
+SUCCESSFUL = "PASSED"
+FAILED = "ERROR"
+
 #firebase init
 cred = credentials.ApplicationDefault()
 firebase_admin.initialize_app(cred, {
@@ -25,18 +31,24 @@ db = firestore.client()
 Time = Time()
 
 def webhook(request):
-    print("Request received!", request)
+    print(TAG, "Request received!")
 
     bot = telegram.Bot(token=BOT_TOKEN)
 
     if request.method == "POST":
         update = telegram.Update.de_json(request.get_json(force=True), bot)
 
+        if update == None:
+            print(TAG, FAILED, "Update == NONE")
+            return
+
         callbackQuery = update.callback_query
         
         if callbackQuery != None:
             query = callbackQuery.data
             chatID = callbackQuery.message.chat_id
+
+            print(TAG, UPDATE_1, chatID, update.message.from_user.first_name, query)
             
             if query == "PIN":
                 bot.sendMessage(chat_id=chatID, 
@@ -46,6 +58,7 @@ def webhook(request):
                 query_ref.set({
                     str(chatID): "setpin " + Time.getDateTime()
                 }, merge=True)
+                print(TAG, UPDATE_1, query, SUCCESSFUL)
             elif query == "URL":
                 bot.sendMessage(chat_id=chatID, 
                                 text="Please enter your URL\n\nE.g: https://temptaking.ado.sg/group/<uniqueCode>",
@@ -54,7 +67,10 @@ def webhook(request):
                 query_ref.set({
                     str(chatID): "seturl " + Time.getDateTime()
                 }, merge=True)
+                print(TAG, UPDATE_1, query, SUCCESSFUL)
             elif query == "SENDER":
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+                
                 cr_details_dict = db.collection("chatrooms").document(str(chatID)).get().to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
                 
@@ -75,6 +91,7 @@ def webhook(request):
                     bot.sendMessage(chat_id=chatID, 
                                     text="⚠ URL required to set sender!\n\n/url to set url",
                                     disable_notification=True)
+                print(TAG, UPDATE_1, query, SUCCESSFUL)
             elif query == "TRACKURL":
                 bot.sendMessage(chat_id=chatID, 
                                 text="Please enter the tracking URL\n\nE.g: https://temptaking.ado.sg/overview/<uniqueCode>",
@@ -83,17 +100,17 @@ def webhook(request):
                 query_ref.set({
                     str(chatID): "settrackurl " + Time.getDateTime()
                 }, merge=True)
-
+                print(TAG, UPDATE_1, query, SUCCESSFUL)
             return
 
-        if update == None or update.message == None or update.message.text == None:
-            print("Error: Update or Message == None")
+        if update.message == None or update.message.text == None:
+            print(TAG, FAILED, "Message == None")
             return
 
         message = update.message.text
         chatID = update.message.chat_id
         
-        print(str(chatID), update.message.from_user.username, message)
+        print(TAG, UPDATE_2, str(chatID), update.message.from_user.first_name, message)
 
         if message.startswith("/"):
             cr_ref = db.collection("chatrooms").document(str(chatID))
@@ -103,18 +120,18 @@ def webhook(request):
                 cr_ref.set({
                         "groupType": update.message.chat.type,
                         "groupTitle": update.message.chat.title,
-                        "username": update.message.chat.username,
                         "first_name": update.message.chat.first_name,
-                        "last_name": update.message.chat.last_name
                 })
             
             if message.startswith("/start"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 welcomeMessage = "🌟 Welcome to TempAdoBot\! 🌟\n\n" + \
                                     "__With me, you can__\n" + \
-                                    "🏹 get reminded to submit your AM and PM temperatures daily\n" + \
-                                    "🏹 send your temperatures directly through me\n" + \
+                                    "🏹 get daily reminders for temperature submissions\n" + \
+                                    "🏹 send temperatures directly\n" + \
+                                    "🏹 check your temperature records for the day\n" + \
                                     "🏹 check who have not send their temperatures\n\n" + \
-                                    "*It is your responsibility to take your temperatures diligently before sending*\n\n" + \
                                     "/setup to start sending temperatures\n" + \
                                     "/help for all available commands"
                 bot.sendMessage(chat_id=chatID,
@@ -122,30 +139,31 @@ def webhook(request):
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 disable_notification=True)
             elif message.startswith("/help"):
-                header = "✋ *TempAdoBot Help Page* ✋\n\n"
-                title = "List of commands:\n"
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
+                header = "✋ *TempAdoBot Help Page* ✋\n\n"
                 commands = "/help \- help page for this bot\n\n" + \
                             "📣 If you are new:\n" + \
-                            "/setup \- a one\-time setup before being able to upload temperatures\n\n" + \
+                            "/setup \- a one\-time setup to upload temperatures\n\n" + \
                             "📣 Uploading of temperature records:\n" + \
                             "/pin \- change your pin\n" + \
                             "/url \- change your url\n" + \
                             "/sender \- change who you are \n" + \
-                            "/history \- view your temperature submissions for today\n" + \
+                            "/history \- view temperature submissions for today\n" + \
                             "/sendtemp \- send your temperature\n\n" + \
                             "📣 Tracking of everyone\'s temperature records \(For commanders\?\):\n" + \
                             "/track \- see who have yet to upload their temperatures\n\n" + \
-                            "💡 Subscribing to reminders\n" + \
-                            "/subscribe \- subscribe to twice daily temperature reminders at 1100 and 1530\n" + \
-                            "/unsubscribe \- unsubscribe to twice daily temperature reminders"
-                            
-                text = header + title + commands
+                            "💡 Subscribing to reminders:\n" + \
+                            "/subscribe \- get daily reminders at 1100 and 1530\n" + \
+                            "/unsubscribe \- unsubscribe to daily reminders"       
+                text = header + commands
                 bot.sendMessage(chat_id=chatID, 
                                 text=text, 
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 disable_notification=True)
             elif message.startswith("/setup"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 messageText = "__Getting started__\n\n" + \
                                 "1️⃣ Setup your PIN\n" + \
                                 "2️⃣ Setup you URL\n" + \
@@ -165,6 +183,8 @@ def webhook(request):
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 disable_notification=True)
             elif message.startswith("/pin"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 cr_details_dict = cr_details.to_dict()
                 doesPINexist = ("sendpin " + str(update.message.from_user.id)) in cr_details_dict
 
@@ -183,10 +203,12 @@ def webhook(request):
 
                 reply_markup = telegram.InlineKeyboardMarkup([button_list])
                 bot.sendMessage(chat_id=chatID, 
-                                            text=messageText,
-                                            reply_markup=reply_markup,
-                                            disable_notification=True)
+                                text=messageText,
+                                reply_markup=reply_markup,
+                                disable_notification=True)
             elif message.startswith("/url"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
 
@@ -209,6 +231,8 @@ def webhook(request):
                                 reply_markup=reply_markup,
                                 disable_notification=True)
             elif message.startswith("/sender"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 cr_details_dict = cr_details.to_dict()
                 doesSenderExist = str(update.message.from_user.id) in cr_details_dict
 
@@ -240,7 +264,16 @@ def webhook(request):
 
                 if doesURLexist and doesPINexist and doesSenderExist:
                     URL = cr_details_dict["sendurl"]
-                    GROUPCODE = URL[URL.rindex("/") + 1:]
+                    GROUPCODE = None
+                    #temp code to cache groupcodes
+                    try: 
+                        GROUPCODE = cr_details_dict["groupCode"]
+                    except:
+                        GROUPCODE = URL[URL.rindex("/") + 1:]
+                        cr_ref.set({
+                            "groupCode": GROUPCODE
+                        }, merge=True)
+
                     MEMBERNAME = cr_details_dict[str(update.message.from_user.id)]
                     MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
                     PIN = cr_details_dict["sendpin " + str(update.message.from_user.id)]
@@ -285,6 +318,8 @@ def webhook(request):
                                     parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                     disable_notification=True)
             elif message.startswith("/sendtemp"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
                 doesPINexist = "sendpin " + str(update.message.from_user.id) in cr_details_dict
@@ -339,9 +374,10 @@ def webhook(request):
                                 reply_markup=reply_markup,
                                 disable_notification=True)
             elif message.startswith("/subscribe") or message.startswith("/unsubscribe"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
                 sub_ref = db.collection("subscribers").document("reminderSubscribers")
-                sub_details = sub_ref.get()
-                sub_details_dict = sub_details.to_dict()
+                sub_details_dict = sub_ref.get().to_dict()
 
                 if message.startswith("/subscribe"):
                     if str(chatID) not in sub_details_dict or not sub_details_dict[str(chatID)]:
@@ -434,7 +470,7 @@ def webhook(request):
                     #ensure query time is not too long ago (1 min)
                     if not isQueryValid(Time.getDateTimeObject(queryType[9:])):
                         bot.sendMessage(chat_id=chatID, 
-                                    text="⌛ Command /sendtemp timeout. Please try again",
+                                    text="⌛ Command timeout. Please try again",
                                     reply_markup=telegram.ReplyKeyboardRemove(),
                                     disable_notification=True)
                         return
@@ -469,6 +505,7 @@ def webhook(request):
                                             text="⚠ Temperature failed to send!\n\n/sendtemp to try again!",
                                             reply_markup=telegram.ReplyKeyboardRemove(),
                                             disable_notification=True)
+                            print(TAG, FAILED, "sendtemp")
                     else:
                         criteria = getSendTempCriteria(doesURLexist, doesPINexist, doesMemberexist)
                         bot.sendMessage(chat_id=chatID,
@@ -523,11 +560,13 @@ def webhook(request):
                         return
 
                     url = message
+                    groupCode = url[url.rindex("/") + 1:]
 
                     try:
                         if isSendURLValid(url):
                             cr_ref.set({
-                                "sendurl": url
+                                "sendurl": url,
+                                "groupCode": groupCode
                             }, merge=True)
                             bot.sendMessage(chat_id=chatID, 
                                             text="✅ URL set as:\n\n" + url,
@@ -587,7 +626,7 @@ def webhook(request):
     return "ok"
 
 def getMemberCodeData(url):
-    request = requests.post(url=url)
+    request = requests.get(url=url)
     text = request.text
 
     indexStart = text.index("loadContents") + 14
@@ -595,8 +634,6 @@ def getMemberCodeData(url):
     data = text[indexStart:indexEnd]
     dataJSON = json.loads(data)
 
-#    groupName = dataJSON["groupName"]
-#    groupCode = dataJSON["groupCode"]
     memberJSON = dataJSON["members"]
 
     return memberJSON
@@ -639,12 +676,11 @@ def isQueryValid(queryTime):
     try:
         delta = timeNow - queryTime
         if delta.total_seconds() / 60 < 1:
-            print(str(delta.total_seconds()))
             return True
         else:
             return False
     except:
-        print("[main.py] isQueryValid(): ERROR occurred")
+        print(TAG, FAILED, "isQueryValid()")
         return False
 
 def getSendTempCriteria(doesURLexist, doesPINexist, doesSenderExist):
@@ -666,4 +702,4 @@ def getCriteriaFailedInline(doesURLexist, doesPINexist, doesSenderExist):
         button_list.append(telegram.InlineKeyboardButton("🙆‍♂️ Set sender", callback_data="SENDER"))
     return button_list
 
-print("-----> V1.2 Deployment success! <-----")
+print("-----> V1.2.1 Deployment success! <-----")

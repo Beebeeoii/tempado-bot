@@ -2,6 +2,10 @@
 
 From the beginning of time...
 
+## V1.2.1
+- {Optimisation} Included caching to improve latancy
+- {UX} Included wider coverage of bot chat actions
+
 ## V1.2
 - {Optimisation} Streamlined setup of bot for temperature sending
 - {Feature} Ability to view temperature history for the day using **__/history__**
