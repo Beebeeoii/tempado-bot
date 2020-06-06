@@ -14,10 +14,11 @@ This bot was made specifically for personels required to submit twice daily temp
 4. Check who have not send their temperatures for the day (**mainly for commanders who have the link - it is different from the one used to send temperatures**)
 5. Check your personal temperature submission history for the day
 
-# This is NOT an automated bot that automatically sends a temperauture for you daily. It does not randomise temperatures for you. You ARE to take your temperature using a thermometer before using this tool.
+> ### Preamble
+> This is **NOT** an automated bot that automatically sends a temperauture for you daily. It does **NOT** randomise temperatures for you. You **ARE** to take your temperature using a thermometer before using this tool.
 
 ## How to use
-Search me up on telegram @TempAdoBot or simply click http://t.me/TempAdoBot
+Search me up on telegram @TempAdoBot or simply [click me](http://t.me/TempAdoBot "Click to start using TempAdoBot")!
 
 1. Sending of temperature (**__/sendtemp__**)
    - **__/setup__**
@@ -52,4 +53,6 @@ For more info, seek help from the bot by using **__/help__** :)
 [Click to view changelog](/CHANGELOG.md)
 
 ## Future plans:
-- [ ] Stop this bot (for there is no reason for this after this COVID period)
+- [ ] Include ability to submit temperature for AM even if it is PM already
+- [x] Include ability to broadcast to users when server is encountering issues
+- [ ] Stop this bot :)
