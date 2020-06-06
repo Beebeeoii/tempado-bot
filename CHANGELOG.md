@@ -2,6 +2,9 @@
 
 From the beginning of time...
 
+## V1.2.2
+- {Feature} Ability for admin to broadcast message when the need arises
+
 ## V1.2.1
 - {Optimisation} Included caching to improve latency
 - {UX} Included wider coverage of bot chat actions

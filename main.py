@@ -13,6 +13,7 @@ FIREBASE_PROJECT_ID = os.environ["FIREBASE_PROJECT_ID"]
 BOT_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SEND_URL = os.environ["SEND_URL"]
 HISTORY_URL = os.environ["HISTORY_URL"]
+ADMIN_TOKEN = os.environ["ADMIN_TOKEN"]
 
 TAG = "main.py"
 UPDATE_1 = "CALLBACK"
@@ -407,6 +408,17 @@ def webhook(request):
                         bot.sendMessage(chat_id=chatID, 
                                         text="🍼 You have not subscribed!",
                                         disable_notification=True)
+            elif message.startswith("/broadcast " + ADMIN_TOKEN):
+                header = "__Message from TempAdoBot__"
+                body = message.split(" ")[2]
+                text = header + "\n\n" + body
+
+                chats = getAllChats()
+
+                for chat in chats:
+                    bot.sendMessage(chat_id=254492482,
+                                    text=int(chat),
+                                    parse_mode=telegram.ParseMode.MARKDOWN_V2)
             else:
                 bot.sendMessage(chat_id=chatID, 
                                 text="⚠ Invalid command!\n\n/help for a list of available commands",
@@ -704,4 +716,12 @@ def getCriteriaFailedInline(doesURLexist, doesPINexist, doesSenderExist):
         button_list.append(telegram.InlineKeyboardButton("🙆‍♂️ Set sender", callback_data="SENDER"))
     return button_list
 
-print("-----> V1.2.1 Deployment success! <-----")
+def getAllChats():
+    allChats = db.collection("chatrooms").stream()
+    chatIDs = []
+    for chat in allChats:
+        chatIDs.append(chat.id)
+    
+    return chatIDs
+
+print("-----> V1.2.2 Deployment success! <-----")
