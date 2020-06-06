@@ -7,8 +7,7 @@ This bot was made specifically for personels required to submit twice daily temp
 ## Screenshots
 <img src = "/screenshot1.jpg" width="200"> <img src = "/screenshot2.jpg" width="200">
 
-### Preamble
----------------
+## Preamble
 This is **NOT** an automated bot that automatically sends a temperauture for you daily. It does **NOT** randomise temperatures for you. You **ARE** to take your temperature using a thermometer before using this tool.
 
 ## Features
