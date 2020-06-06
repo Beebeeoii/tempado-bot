@@ -409,16 +409,20 @@ def webhook(request):
                                         text="🍼 You have not subscribed!",
                                         disable_notification=True)
             elif message.startswith("/broadcast " + ADMIN_TOKEN):
-                header = "__Message from TempAdoBot__"
+                if len(message.split(" ")) != 3:
+                    bot.sendMessage(chat_id=chatID, 
+                                    text="⚠ Invalid Syntax: /broadcast <TOKEN> <MESSAGE>",
+                                    disable_notification=True)
+                    return
+                header = "Message from TempAdoBot:"
                 body = message.split(" ")[2]
                 text = header + "\n\n" + body
 
                 chats = getAllChats()
 
-                for chat in chats:
-                    bot.sendMessage(chat_id=254492482,
-                                    text=int(chat),
-                                    parse_mode=telegram.ParseMode.MARKDOWN_V2)
+                for chatID in chats:
+                    bot.sendMessage(chat_id=chatID,
+                                    text=text)
             else:
                 bot.sendMessage(chat_id=chatID, 
                                 text="⚠ Invalid command!\n\n/help for a list of available commands",
@@ -720,7 +724,7 @@ def getAllChats():
     allChats = db.collection("chatrooms").stream()
     chatIDs = []
     for chat in allChats:
-        chatIDs.append(chat.id)
+        chatIDs.append(int(chat.id))
     
     return chatIDs
 
