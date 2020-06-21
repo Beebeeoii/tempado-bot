@@ -418,15 +418,18 @@ def webhook(request):
                                     disable_notification=True)
                     return
                 header = "Message from TempAdoBot:"
-                bodyList = message.split(" ")[2]
+                bodyList = message.split(" ")[2:]
                 body = " ".join(bodyList)
                 text = header + "\n\n" + body
 
                 chats = getAllChats()
 
                 for chatID in chats:
-                    bot.sendMessage(chat_id=chatID,
-                                    text=text)
+                    try:
+                        bot.sendMessage(chat_id=chatID,
+                                        text=text)
+                    except:
+                        print("Error occured when broadcasting to", chatID, "Did he block me?")
             else:
                 bot.sendMessage(chat_id=chatID, 
                                 text="⚠ Invalid command!\n\n/help for a list of available commands",
