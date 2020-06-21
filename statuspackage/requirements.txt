@@ -2,3 +2,4 @@
 # package>=version
 python-telegram-bot==12.7
 firebase-admin==4.2.0
+pytz==2020.1

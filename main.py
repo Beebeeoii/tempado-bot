@@ -430,6 +430,31 @@ def webhook(request):
                                         text=text)
                     except:
                         print("Error occured when broadcasting to", chatID, "Did he block me?")
+            elif message.startswith("/status"):
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+
+                send_details_dict = db.collection("status").document("send").get().to_dict()
+                track_details_dict = db.collection("status").document("track").get().to_dict()
+
+                send_details_list = list(send_details_dict)
+                track_details_list = list(track_details_dict)
+
+                send_details_list.sort()
+                track_details_list.sort()
+
+                latestSendCheckTiming = send_details_list[-1]
+                latestTrackCheckTiming = track_details_list[-1]
+
+                text = "Send Service Status:\n\n" + \
+                        "Service Online: " + str(send_details_dict[latestSendCheckTiming]) + "\n" + \
+                        "Last checked: " + latestSendCheckTiming + "\n\n" + \
+                        "Track Service Status:\n\n" + \
+                        "Service Online: " + str(track_details_dict[latestTrackCheckTiming]) + "\n" + \
+                        "Last checked: " + latestTrackCheckTiming
+
+                bot.sendMessage(chat_id=chatID, 
+                                text=text,
+                                disable_notification=True)
             else:
                 bot.sendMessage(chat_id=chatID, 
                                 text="⚠ Invalid command!\n\n/help for a list of available commands",
@@ -735,4 +760,4 @@ def getAllChats():
     
     return chatIDs
 
-print("-----> V1.2.3 Deployment success! <-----")
+print("-----> V1.3 Deployment success! <-----")

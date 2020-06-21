@@ -7,7 +7,7 @@ class Time():
         self.MERIDIES_AM = "AM"
         self.MERIDIES_PM = "PM"
         self.TIME_FORMAT = "%d/%m/%Y %H:%M:%S"
-        self.TIME_ZONE = "Asia/Singapore"#os.environ["TIME_ZONE"]
+        self.TIME_ZONE = os.environ["TIME_ZONE"]
 
     def getDateTime(self):
         now = datetime.now(timezone(self.TIME_ZONE))

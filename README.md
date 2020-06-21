@@ -46,6 +46,9 @@ Search me up on telegram @TempAdoBot or simply [click me](http://t.me/TempAdoBot
 4. Checking of your personal temperature submission history
    - **__/history__**
      - View your AM and PM temperature submissions for the day
+5. Checking status of temptaking.ado.sg website
+   - **__/status__**
+      - Check whether the send and track services are available
 
 For more info, seek help from the bot by using **__/help__** :)
 
@@ -53,6 +56,7 @@ For more info, seek help from the bot by using **__/help__** :)
 [Click to view changelog](/CHANGELOG.md)
 
 ## Future plans:
+- [x] Include ability to check availability status of temptaking.ado.sg
 - [ ] Include ability to submit temperature for AM even if it is PM already
 - [x] Include ability to broadcast to users when server is encountering issues
 - [ ] Stop this bot :)
