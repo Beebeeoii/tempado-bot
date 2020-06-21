@@ -2,6 +2,9 @@
 
 From the beginning of time...
 
+## 1.2.3
+- Fixed bug that causes service to crash when website is down
+
 ## V1.2.2
 - {Feature} Ability for admin to broadcast message when the need arises
 
