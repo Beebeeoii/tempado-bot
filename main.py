@@ -143,7 +143,8 @@ def webhook(request):
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
                 header = "✋ *TempAdoBot Help Page* ✋\n\n"
-                commands = "/help \- help page for this bot\n\n" + \
+                commands = "/help \- help page for this bot\n" + \
+                            "/status \- check if temptaking.ado services are available\n\n" + \
                             "📣 If you are new:\n" + \
                             "/setup \- a one\-time setup to upload temperatures\n\n" + \
                             "📣 Uploading of temperature records:\n" + \
