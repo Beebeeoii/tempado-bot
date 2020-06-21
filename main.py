@@ -289,7 +289,7 @@ def webhook(request):
                     }
 
                     try:
-                        response = requests.post(url=HISTORY_URL, data=data).text
+                        response = requests.post(url=HISTORY_URL, data=data, timeout=10).text
                         responseDict = json.loads(response)[0]
                         latestAM = responseDict["latestAM"]
                         latestPM = responseDict["latestPM"]
@@ -363,8 +363,11 @@ def webhook(request):
 
                 if doesURLexist:
                     inlineButtonText = "🌐 Change tracking URL"
-                    data = track.getGroupData(cr_details_dict["checkurl"])
-                    messageText = track.formatReminder(data)
+                    try:
+                        data = track.getGroupData(cr_details_dict["checkurl"])
+                        messageText = track.formatReminder(data)
+                    except:
+                        messageText = "temptaking.ado.sg seems to be down. Please try again later."
 
                 button_list = [
                         telegram.InlineKeyboardButton(inlineButtonText, callback_data="TRACKURL")
@@ -409,13 +412,14 @@ def webhook(request):
                                         text="🍼 You have not subscribed!",
                                         disable_notification=True)
             elif message.startswith("/broadcast " + ADMIN_TOKEN):
-                if len(message.split(" ")) != 3:
+                if len(message.split(" ")) < 3:
                     bot.sendMessage(chat_id=chatID, 
                                     text="⚠ Invalid Syntax: /broadcast <TOKEN> <MESSAGE>",
                                     disable_notification=True)
                     return
                 header = "Message from TempAdoBot:"
-                body = message.split(" ")[2]
+                bodyList = message.split(" ")[2]
+                body = " ".join(bodyList)
                 text = header + "\n\n" + body
 
                 chats = getAllChats()
@@ -520,7 +524,7 @@ def webhook(request):
                                             disable_notification=True)
                         except :
                             bot.sendMessage(chat_id=chatID,
-                                            text="⚠ Temperature failed to send!\n\n/sendtemp to try again!",
+                                            text="⚠ Temperature failed to send!\n\ntemptaking.ado.sg seems to be down. Please try again later!",
                                             reply_markup=telegram.ReplyKeyboardRemove(),
                                             disable_notification=True)
                             print(TAG, FAILED, "sendtemp")
@@ -644,7 +648,7 @@ def webhook(request):
     return "ok"
 
 def getMemberCodeData(url):
-    request = requests.get(url=url)
+    request = requests.get(url=url, timeout=10)
     text = request.text
 
     indexStart = text.index("loadContents") + 14
@@ -685,7 +689,7 @@ def sendTemperature(url, memberId, temperature, pin):
                 "temperature": temperature,
                 "pin": pin}
 
-    request = requests.post(url=SEND_URL, data=PAYLOAD)
+    request = requests.post(url=SEND_URL, data=PAYLOAD, timeout=10)
     return request.text
 
 def isQueryValid(queryTime):
@@ -728,4 +732,4 @@ def getAllChats():
     
     return chatIDs
 
-print("-----> V1.2.2 Deployment success! <-----")
+print("-----> V1.2.3 Deployment success! <-----")
