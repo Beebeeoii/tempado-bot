@@ -62,7 +62,7 @@ def webhook(request):
                 print(TAG, UPDATE_1, query, SUCCESSFUL)
             elif query == "URL":
                 bot.sendMessage(chat_id=chatID, 
-                                text="Please enter your URL\n\nE.g: https://temptaking.ado.sg/group/<uniqueCode>",
+                                text="Please enter your URL\n\nE.g: https://temptaking.ado.sg/group/uniqueCode",
                                 disable_notification=True)
                 query_ref = db.collection("querying").document("replies")
                 query_ref.set({
@@ -95,7 +95,7 @@ def webhook(request):
                 print(TAG, UPDATE_1, query, SUCCESSFUL)
             elif query == "TRACKURL":
                 bot.sendMessage(chat_id=chatID, 
-                                text="Please enter the tracking URL\n\nE.g: https://temptaking.ado.sg/overview/<uniqueCode>",
+                                text="Please enter the tracking URL\n\nE.g: https://temptaking.ado.sg/overview/uniqueCode",
                                 disable_notification=True)
                 query_ref = db.collection("querying").document("replies")
                 query_ref.set({
@@ -624,7 +624,7 @@ def webhook(request):
                                             disable_notification=True)
                         else:
                             bot.sendMessage(chat_id=chatID, 
-                                            text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/<uniqueCode>",
+                                            text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/uniqueCode",
                                             disable_notification=True)
                     except (MissingPrefixError, InvalidURLError, InvalidCodeError) as e:
                         print("[main.py] webhook: /setcheckurl -- " + str(e))
@@ -634,7 +634,7 @@ def webhook(request):
                     except:
                         print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
                         bot.sendMessage(chat_id=chatID, 
-                                        text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/<uniqueCode>",
+                                        text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/uniqueCode",
                                         disable_notification=True)
                 elif queryType.startswith("settrackurl"):
                     bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.UPLOAD_DOCUMENT)
@@ -662,7 +662,7 @@ def webhook(request):
                                             disable_notification=True)
                         else:
                             bot.sendMessage(chat_id=chatID, 
-                                            text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/overview/<uniqueCode>",
+                                            text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/overview/uniqueCode",
                                             disable_notification=True)
                     except (MissingPrefixError, InvalidURLError) as e:
                         print("[main.py] webhook: /setcheckurl -- " + str(e))
@@ -672,7 +672,7 @@ def webhook(request):
                     except:
                         print("[main.py] webhook: /setcheckurl -- Unknown Error occurred")
                         bot.sendMessage(chat_id=chatID, 
-                                        text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/<uniqueCode>",
+                                        text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/uniqueCode",
                                         disable_notification=True)
     return "ok"
 
@@ -680,8 +680,8 @@ def getMemberCodeData(url):
     request = requests.get(url=url, timeout=10)
     text = request.text
 
-    indexStart = text.index("loadContents") + 14
-    indexEnd = text.rindex("true") + 7
+    indexStart = text.index("{")
+    indexEnd = text.rindex("}") + 1
     data = text[indexStart:indexEnd]
     dataJSON = json.loads(data)
 
@@ -761,4 +761,4 @@ def getAllChats():
     
     return chatIDs
 
-print("-----> V1.3 Deployment success! <-----")
+print("-----> V1.3.1 Deployment success! <-----")

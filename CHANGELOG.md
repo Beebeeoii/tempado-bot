@@ -2,6 +2,10 @@
 
 From the beginning of time...
 
+## 1.3.1
+- Fixed bug that occurs for a few URLS when trying to set sender
+- Removed "<" and ">" in example URLS to prevent confusions
+
 ## 1.3
 - {Feature} Check status of temptaking.ado.sg
 - Bug squishes and more error handling in place
