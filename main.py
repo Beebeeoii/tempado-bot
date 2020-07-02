@@ -144,7 +144,7 @@ def webhook(request):
 
                 header = "✋ *TempAdoBot Help Page* ✋\n\n"
                 commands = "/help \- help page for this bot\n" + \
-                            "/status \- check if temptaking.ado services are available\n\n" + \
+                            "/status \- check if temptaking\.ado services are available\n\n" + \
                             "📣 If you are new:\n" + \
                             "/setup \- a one\-time setup to upload temperatures\n\n" + \
                             "📣 Uploading of temperature records:\n" + \
@@ -441,7 +441,9 @@ def webhook(request):
                 track_details_list = list(track_details_dict)
 
                 send_details_list.sort()
+                send_details_list.sort(key=lambda x: x.split(" ")[0].split("/")[1])
                 track_details_list.sort()
+                track_details_list.sort(key=lambda x: x.split(" ")[0].split("/")[1])
 
                 latestSendCheckTiming = send_details_list[-1]
                 latestTrackCheckTiming = track_details_list[-1]

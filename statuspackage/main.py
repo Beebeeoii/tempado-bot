@@ -47,6 +47,7 @@ def statusCheck(a, b):
     if sendNoEntries > 24:
         sortedDetails = list(send_details_dict)
         sortedDetails.sort()
+        sortedDetails.sort(key=lambda x: x.split(" ")[0].split("/")[1])
         send_ref.update({
             sortedDetails[0]: firestore.DELETE_FIELD
         })
@@ -54,6 +55,7 @@ def statusCheck(a, b):
     if trackNoEntries > 24:
         sortedDetails = list(track_details_dict)
         sortedDetails.sort()
+        sortedDetails.sort(key=lambda x: x.split(" ")[0].split("/")[1])
         track_ref.update({
             sortedDetails[0]: firestore.DELETE_FIELD
         })
