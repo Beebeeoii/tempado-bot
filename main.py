@@ -367,6 +367,7 @@ def webhook(request):
                     try:
                         data = track.getGroupData(cr_details_dict["checkurl"])
                         messageText = track.formatReminder(data)
+                        messageText = messageText.replace("-", "\-")
                     except:
                         messageText = "temptaking.ado.sg seems to be down. Please try again later."
 
