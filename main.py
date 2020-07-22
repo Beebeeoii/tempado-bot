@@ -277,7 +277,14 @@ def webhook(request):
                         }, merge=True)
 
                     MEMBERNAME = cr_details_dict[str(update.message.from_user.id)]
-                    MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
+                    MEMBERID = None
+                    try:
+                        MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
+                    except:
+                        bot.sendMessage(chat_id=chatID, 
+                                    text="⚠ Your name can't be found in the list.\n\nAre you sure your URL and your sender name are correct?",
+                                    disable_notification=True)
+                        return
                     PIN = cr_details_dict["sendpin " + str(update.message.from_user.id)]
 
                     data = {
@@ -538,7 +545,15 @@ def webhook(request):
                     if doesURLexist and doesPINexist and doesMemberexist:
                         URL = cr_details_dict["sendurl"]
                         MEMBERNAME = cr_details_dict[str(update.message.from_user.id)]
-                        MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
+                        MEMBERID = None
+                        try:
+                            MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
+                        except:
+                            bot.sendMessage(chat_id=chatID,
+                                            text="⚠ Your name can't be found in the list.\n\nAre you sure your URL and your sender name are correct?",
+                                            reply_markup=telegram.ReplyKeyboardRemove(),
+                                            disable_notification=True)
+                            return
                         TEMPERATURE = message
                         PIN = cr_details_dict["sendpin " + str(update.message.from_user.id)]
 
