@@ -188,6 +188,7 @@ def webhook(request):
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
                 cr_details_dict = cr_details.to_dict()
+                print(cr_details_dict, str(update.message.from_user.id), ("sendpin " + str(update.message.from_user.id)) in cr_details_dict)
                 doesPINexist = ("sendpin " + str(update.message.from_user.id)) in cr_details_dict
 
                 pin = None
@@ -236,6 +237,7 @@ def webhook(request):
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
                 cr_details_dict = cr_details.to_dict()
+                print(cr_details_dict, str(update.message.from_user.id), str(update.message.from_user.id) in cr_details_dict)
                 doesSenderExist = str(update.message.from_user.id) in cr_details_dict
 
                 sender = None
@@ -476,6 +478,7 @@ def webhook(request):
             if not query_details.exists:
                 return
             query_details_dict = query_details.to_dict()
+            print(query_details_dict, str(chatID),str(chatID) in query_details_dict)
             isBotQuerying = str(chatID) in query_details_dict
 
             if isBotQuerying:
@@ -629,9 +632,10 @@ def webhook(request):
                         return
 
                     url = message
-                    groupCode = url[url.rindex("/") + 1:]
-
+                    
                     try:
+                        groupCode = url[url.rindex("/") + 1:]
+
                         if isSendURLValid(url):
                             cr_ref.set({
                                 "sendurl": url,
