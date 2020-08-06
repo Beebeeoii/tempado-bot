@@ -1,4 +1,5 @@
 from .time_helper import Time
+from telegram.utils.helpers import escape_markdown
 import requests
 import json
 import telegram
@@ -38,7 +39,7 @@ def formatReminder(data):
     MERIDIES = Time.getMeridiesFromTime(Time.getTime())
 
     message = []
-    HEADING = "🏮 " + getGroupNameData(data) + " 🏮\n"
+    HEADING = "🏮 " + escape_markdown(getGroupNameData(data), version=2) + " 🏮\n"
 
     message.append(HEADING)
 
@@ -92,10 +93,10 @@ def getMissingMembers(memberTempData, meridies):
         if meridies == Time.MERIDIES_PM:
             isPMSent = record[Time.MERIDIES_PM]
             if not isPMSent:
-                pmMissing.append(member["identifier"].upper())
+                pmMissing.append(escape_markdown(member["identifier"].upper(), version=2))
 
         isAMSent = record[Time.MERIDIES_AM]
         if not isAMSent:
-            amMissing.append(member["identifier"].upper())
+            amMissing.append(escape_markdown(member["identifier"].upper(), version=2))
 
     return missingMembers
