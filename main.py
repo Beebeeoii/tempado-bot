@@ -1,5 +1,6 @@
 import os
 import telegram
+from telegram.utils.helpers import escape_markdown
 import requests
 import json
 import firebase_admin
@@ -385,7 +386,7 @@ def webhook(request):
 
                 reply_markup = telegram.InlineKeyboardMarkup([button_list])
                 bot.sendMessage(chat_id=chatID, 
-                                text=messageText,
+                                text=escape_markdown(messageText, version=2),
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 reply_markup=reply_markup,
                                 disable_notification=True)
