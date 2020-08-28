@@ -126,20 +126,23 @@ def webhook(request):
                 })
             
             if message.startswith("/start"):
-                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+                try:
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
-                welcomeMessage = "🌟 Welcome to TempAdoBot\! 🌟\n\n" + \
-                                    "__With me, you can__\n" + \
-                                    "🏹 get daily reminders for temperature submissions\n" + \
-                                    "🏹 send temperatures directly\n" + \
-                                    "🏹 check your temperature records for the day\n" + \
-                                    "🏹 check who have not send their temperatures\n\n" + \
-                                    "/setup to start sending temperatures\n" + \
-                                    "/help for all available commands"
-                bot.sendMessage(chat_id=chatID,
-                                text=welcomeMessage,
-                                parse_mode=telegram.ParseMode.MARKDOWN_V2,
-                                disable_notification=True)
+                    welcomeMessage = "🌟 Welcome to TempAdoBot\! 🌟\n\n" + \
+                                        "__With me, you can__\n" + \
+                                        "🏹 get daily reminders for temperature submissions\n" + \
+                                        "🏹 send temperatures directly\n" + \
+                                        "🏹 check your temperature records for the day\n" + \
+                                        "🏹 check who have not send their temperatures\n\n" + \
+                                        "/setup to start sending temperatures\n" + \
+                                        "/help for all available commands"
+                    bot.sendMessage(chat_id=chatID,
+                                    text=welcomeMessage,
+                                    parse_mode=telegram.ParseMode.MARKDOWN_V2,
+                                    disable_notification=True)
+                except:
+                    print("Error occured when broadcasting to", chatID, "Did he block me?")
             elif message.startswith("/help"):
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
@@ -165,26 +168,29 @@ def webhook(request):
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 disable_notification=True)
             elif message.startswith("/setup"):
-                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+                try:
+                    bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
-                messageText = "__Getting started__\n\n" + \
-                                "1️⃣ Setup your PIN\n" + \
-                                "2️⃣ Setup you URL\n" + \
-                                "3️⃣ Setup your identity\n" + \
-                                "4️⃣ Start sending your temperatures\!"
+                    messageText = "__Getting started__\n\n" + \
+                                    "1️⃣ Setup your PIN\n" + \
+                                    "2️⃣ Setup you URL\n" + \
+                                    "3️⃣ Setup your identity\n" + \
+                                    "4️⃣ Start sending your temperatures\!"
 
-                button_list = [
-                        [telegram.InlineKeyboardButton("🔑 Set PIN", callback_data="PIN"),
-                        telegram.InlineKeyboardButton("🌐 Set URL", callback_data="URL")],
-                        [telegram.InlineKeyboardButton("🙆‍♂️ Set sender", callback_data="SENDER")]
-                ]
+                    button_list = [
+                            [telegram.InlineKeyboardButton("🔑 Set PIN", callback_data="PIN"),
+                            telegram.InlineKeyboardButton("🌐 Set URL", callback_data="URL")],
+                            [telegram.InlineKeyboardButton("🙆‍♂️ Set sender", callback_data="SENDER")]
+                    ]
 
-                reply_markup = telegram.InlineKeyboardMarkup(button_list)
-                bot.sendMessage(chat_id=chatID, 
-                                text=messageText,
-                                reply_markup=reply_markup,
-                                parse_mode=telegram.ParseMode.MARKDOWN_V2,
-                                disable_notification=True)
+                    reply_markup = telegram.InlineKeyboardMarkup(button_list)
+                    bot.sendMessage(chat_id=chatID, 
+                                    text=messageText,
+                                    reply_markup=reply_markup,
+                                    parse_mode=telegram.ParseMode.MARKDOWN_V2,
+                                    disable_notification=True)
+                except:
+                    print("Error occured when broadcasting to", chatID, "Did he block me?")
             elif message.startswith("/pin"):
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
