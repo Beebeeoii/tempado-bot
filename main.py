@@ -77,7 +77,15 @@ def webhook(request):
                 doesURLexist = "sendurl" in cr_details_dict
                 
                 if doesURLexist:
-                    reply_markup = getMemberNamesKeyboardMarkup(cr_details_dict["sendurl"])
+                    try:
+                        reply_markup = getMemberNamesKeyboardMarkup(cr_details_dict["sendurl"])
+                    except:
+                        print("Connection to server failed")
+                        bot.sendMessage(chat_id=chatID,
+                                    text="⚠ Temptaking.ado.sg server seems to be down. Please try again later!", 
+                                    reply_markup=telegram.ReplyKeyboardRemove(),
+                                    disable_notification=True)
+                        return
 
                     query_ref = db.collection("querying").document("replies")
                     
@@ -291,7 +299,7 @@ def webhook(request):
                         MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
                     except:
                         bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ Your name can't be found in the list.\n\nAre you sure your URL and your sender name are correct?",
+                                    text="⚠ Your name can't be found in the list.\n\nTemptaking.ado.sg may be down or your URL and sender name are incorrect",
                                     disable_notification=True)
                         return
                     PIN = cr_details_dict["sendpin " + str(update.message.from_user.id)]
@@ -515,7 +523,14 @@ def webhook(request):
 
                     if doesURLexist:
                         URL = cr_details_dict["sendurl"]
-                        members = list(map(lambda x: x["identifier"], getMemberCodeData(URL)))
+                        try:
+                            members = list(map(lambda x: x["identifier"], getMemberCodeData(URL)))
+                        except:
+                            bot.sendMessage(chat_id=chatID, 
+                                    text="⚠ Temptaking.ado.sg server seems to be down. Please try again later!",
+                                    reply_markup=telegram.ReplyKeyboardRemove(),
+                                    disable_notification=True)
+                            return
                         if message not in members:
                             bot.sendMessage(chat_id=chatID, 
                                     text="⚠ " + message + " not a valid member! /sender to try again",
@@ -559,7 +574,7 @@ def webhook(request):
                             MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
                         except:
                             bot.sendMessage(chat_id=chatID,
-                                            text="⚠ Your name can't be found in the list.\n\nAre you sure your URL and your sender name are correct?",
+                                            text="⚠ Your name can't be found in the list.\n\nTemptaking.ado.sg may be down or your URL and sender name are incorrect",
                                             reply_markup=telegram.ReplyKeyboardRemove(),
                                             disable_notification=True)
                             return
