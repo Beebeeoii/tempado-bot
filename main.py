@@ -368,7 +368,7 @@ def webhook(request):
                 doesURLexist = "checkurl" in cr_details_dict
 
                 inlineButtonText = "🌐 Set tracking URL"
-                messageText = "⚠ You have not setup your URL\!\n\n" + \
+                messageText = "⚠ You have not setup your URL!\n\n" + \
                                 "A tracking URL is required, which is different from the one used to send temperatures\n\n" + \
                                 "Use /history instead to view your temperature history"
 
