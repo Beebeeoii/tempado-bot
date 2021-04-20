@@ -33,15 +33,13 @@ db = firestore.client()
 Time = Time()
 
 def webhook(request):
-    print(TAG, "Request received!")
-
     bot = telegram.Bot(token=BOT_TOKEN)
 
     if request.method == "POST":
         update = telegram.Update.de_json(request.get_json(force=True), bot)
 
         if update == None:
-            print(TAG, FAILED, "Update == NONE")
+            print(FAILED, "Update == NONE")
             return
 
         callbackQuery = update.callback_query
@@ -50,7 +48,7 @@ def webhook(request):
             query = callbackQuery.data
             chatID = callbackQuery.message.chat_id
 
-            print(TAG, UPDATE_1, chatID, callbackQuery.message.from_user.first_name, query)
+            print(UPDATE_1, chatID, query)
             
             if query == "PIN":
                 bot.sendMessage(chat_id=chatID, 
@@ -60,7 +58,7 @@ def webhook(request):
                 query_ref.set({
                     str(chatID): "setpin " + Time.getDateTime()
                 }, merge=True)
-                print(TAG, UPDATE_1, query, SUCCESSFUL)
+                print(UPDATE_1, chatID, query, SUCCESSFUL)
             elif query == "URL":
                 bot.sendMessage(chat_id=chatID, 
                                 text="Please enter your URL\n\nE.g: https://temptaking.ado.sg/group/uniqueCode",
@@ -69,7 +67,7 @@ def webhook(request):
                 query_ref.set({
                     str(chatID): "seturl " + Time.getDateTime()
                 }, merge=True)
-                print(TAG, UPDATE_1, query, SUCCESSFUL)
+                print(UPDATE_1, chatID, query, SUCCESSFUL)
             elif query == "SENDER":
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
@@ -82,9 +80,10 @@ def webhook(request):
                     except:
                         print("Connection to server failed")
                         bot.sendMessage(chat_id=chatID,
-                                    text="⚠ Temptaking.ado.sg server seems to be down. Please try again later!", 
+                                    text="⚠ Unable to retrieve name list as temptaking.ado.sg seems to be down.\n\nPlease try again later!", 
                                     reply_markup=telegram.ReplyKeyboardRemove(),
                                     disable_notification=True)
+                        print(UPDATE_1, chatID, query, FAILED)
                         return
 
                     query_ref = db.collection("querying").document("replies")
@@ -101,7 +100,7 @@ def webhook(request):
                     bot.sendMessage(chat_id=chatID, 
                                     text="⚠ URL required to set sender!\n\n/url to set url",
                                     disable_notification=True)
-                print(TAG, UPDATE_1, query, SUCCESSFUL)
+                print(UPDATE_1, chatID, query, SUCCESSFUL)
             elif query == "TRACKURL":
                 bot.sendMessage(chat_id=chatID, 
                                 text="Please enter the tracking URL\n\nE.g: https://temptaking.ado.sg/overview/uniqueCode",
@@ -110,19 +109,24 @@ def webhook(request):
                 query_ref.set({
                     str(chatID): "settrackurl " + Time.getDateTime()
                 }, merge=True)
-                print(TAG, UPDATE_1, query, SUCCESSFUL)
+                print(UPDATE_1, chatID, query, SUCCESSFUL)
             return
 
         if update.message == None or update.message.text == None:
-            print(TAG, FAILED, "Message == None")
+            print(FAILED, "Message == None")
             return
 
         message = update.message.text
         chatID = update.message.chat_id
         
-        print(TAG, UPDATE_2, str(chatID), update.message.from_user.first_name, message)
+        print(UPDATE_2, str(chatID), update.message.from_user.first_name, message)
 
         if message.startswith("/"):
+            try:
+                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
+            except:
+                print("User blocked bot... mostprobably")
+                return
             cr_ref = db.collection("chatrooms").document(str(chatID))
             cr_details = cr_ref.get()
 
@@ -168,7 +172,7 @@ def webhook(request):
                             "📣 Tracking of everyone\'s temperature records \(For commanders\?\):\n" + \
                             "/track \- see who have yet to upload their temperatures\n\n" + \
                             "💡 Subscribing to reminders:\n" + \
-                            "/subscribe \- get daily reminders at 1100 and 1530\n" + \
+                            "/subscribe \- get daily reminders at 0800 and 1530\n" + \
                             "/unsubscribe \- unsubscribe to daily reminders"       
                 text = header + commands
                 bot.sendMessage(chat_id=chatID, 
@@ -274,8 +278,6 @@ def webhook(request):
                                 reply_markup=reply_markup,
                                 disable_notification=True)
             elif message.startswith("/history"):
-                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
-
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "sendurl" in cr_details_dict
                 doesPINexist = "sendpin " + str(update.message.from_user.id) in cr_details_dict
@@ -299,7 +301,7 @@ def webhook(request):
                         MEMBERID = getMemberIdFromName(URL, MEMBERNAME)
                     except:
                         bot.sendMessage(chat_id=chatID, 
-                                    text="⚠ Your name can't be found in the list.\n\nTemptaking.ado.sg may be down or your URL and sender name are incorrect",
+                                    text="⚠ Unable to retrieve your history.\n\nTemptaking.ado.sg may be down or your URL and sender name are incorrect.",
                                     disable_notification=True)
                         return
                     PIN = cr_details_dict["sendpin " + str(update.message.from_user.id)]
@@ -328,10 +330,13 @@ def webhook(request):
                                         "🌙 PM temperature: " + latestPM
                     except:
                         messageText = "😢 Looks like temptaking.ado.sg is down. Please try again later!"
-
-                    bot.sendMessage(chat_id=chatID, 
+                    
+                    try:
+                        bot.sendMessage(chat_id=chatID, 
                                     text=messageText,
                                     disable_notification=True)
+                    except:
+                        print("User blocked bot")      
                 else:
                     criteria = getSendTempCriteria(doesURLexist, doesPINexist, doesSenderExist)
                     button_list = getCriteriaFailedInline(doesURLexist, doesPINexist, doesSenderExist)
@@ -376,8 +381,6 @@ def webhook(request):
                                     parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                     disable_notification=True)
             elif message.startswith("/track"):
-                bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
-
                 cr_details_dict = cr_details.to_dict()
                 doesURLexist = "checkurl" in cr_details_dict
 
@@ -392,18 +395,21 @@ def webhook(request):
                         data = track.getGroupData(cr_details_dict["checkurl"])
                         messageText = track.formatReminder(data)
                     except:
-                        messageText = "temptaking.ado.sg seems to be down. Please try again later."
+                        messageText = "⚠ Temptaking.ado.sg seems to be down. Please try again later."
 
                 button_list = [
                         telegram.InlineKeyboardButton(inlineButtonText, callback_data="TRACKURL")
                 ]
 
                 reply_markup = telegram.InlineKeyboardMarkup([button_list])
-                bot.sendMessage(chat_id=chatID, 
+                try:
+                    bot.sendMessage(chat_id=chatID, 
                                 text=escape_markdown(messageText, version=2),
                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
                                 reply_markup=reply_markup,
                                 disable_notification=True)
+                except:
+                    print("User blocked bot")
             elif message.startswith("/subscribe") or message.startswith("/unsubscribe"):
                 bot.sendChatAction(chat_id=chatID, action=telegram.ChatAction.TYPING)
 
@@ -437,6 +443,7 @@ def webhook(request):
                                         text="🍼 You have not subscribed!",
                                         disable_notification=True)
             elif message.startswith("/broadcast " + ADMIN_TOKEN):
+                return
                 if len(message.split(" ")) < 3:
                     bot.sendMessage(chat_id=chatID, 
                                     text="⚠ Invalid Syntax: /broadcast <TOKEN> <MESSAGE>",
@@ -717,6 +724,8 @@ def webhook(request):
                         bot.sendMessage(chat_id=chatID, 
                                         text="⚠ Invalid URL!\n\nURL Example: https://temptaking.ado.sg/group/uniqueCode",
                                         disable_notification=True)
+            else:
+                print("Group message")
     return "ok"
 
 def getMemberCodeData(url):
