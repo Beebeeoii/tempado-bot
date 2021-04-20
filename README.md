@@ -1,16 +1,21 @@
-# TempAdoBot
-A telegram bot for temptaking.ado.sg!
+# TempAdoBot [No longer in service!]
+
+A telegram bot for temptaking.ado.sg (which has unfortunately closed down) !
 
 ## About
+
 This bot was made specifically for personels required to submit twice daily temperatures on temptaking.ado.sg. It was made to better lifes by reducing the hassle of manually submitting temperatures through the website and checking of who has yet to send their temperatures.
 
 ## Screenshots
+
 <img src = "/screenshot1.jpg" width="200"> <img src = "/screenshot2.jpg" width="200">
 
 ## Preamble
+
 This is **NOT** an automated bot that automatically sends a temperauture for you daily. It does **NOT** randomise temperatures for you. You **ARE** to take your temperature using a thermometer before using this tool.
 
 ## Features
+
 1. One-time user-friendly set up!
 2. Send your temperatures directly on telegram after a one-time setup
 3. Set up daily reminders for AM and PM temperature (**recommended for groups**)
@@ -18,6 +23,7 @@ This is **NOT** an automated bot that automatically sends a temperauture for you
 5. Check your personal temperature submission history for the day
 
 ## How to use
+
 Search me up on telegram @TempAdoBot or simply [click me](http://t.me/TempAdoBot "Click to start using TempAdoBot")!
 
 1. Sending of temperature (**__/sendtemp__**)
@@ -53,10 +59,11 @@ Search me up on telegram @TempAdoBot or simply [click me](http://t.me/TempAdoBot
 For more info, seek help from the bot by using **__/help__** :)
 
 ## Changelog
+
 [Click to view changelog](/CHANGELOG.md)
 
 ## Future plans:
+
 - [x] Include ability to check availability status of temptaking.ado.sg
-- [ ] Include ability to submit temperature for AM even if it is PM already
 - [x] Include ability to broadcast to users when server is encountering issues
-- [ ] Stop this bot :)
+- [x] Stop this bot :)
